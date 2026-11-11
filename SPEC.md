@@ -12,7 +12,7 @@ Source to cite in the README and UI: USDA FSIS, "Keep Your Food Safe During Emer
 
 | County | FIPS | Why |
 |---|---|---|
-| Harris County, TX | 48201 | Hurricane Beryl, July 2024, is the main replay |
+| Harris County, TX | 48201 | The Houston derecho, May 2024, is the main replay |
 | Miami-Dade County, FL | 12086 | High data coverage, hurricane exposure |
 | Cook County, IL | 17031 | High data coverage, different climate |
 
@@ -60,7 +60,9 @@ Why R3 exists: a county index can stay low while one neighbourhood is dark. R3 i
 
 The 60/40 split is a product assumption. Say so in the UI.
 
-One payout per policy per outage event. If an outage first qualifies at 4h and later passes 24h, the second payment is the difference, sent as a separate payout with its own key (see `CONTRACTS.md` section 7).
+**Hours clause.** Qualifying runs in the same county that start within 72 hours of the previous run's end are one outage event. 72 hours is a product parameter, like the hours clause in a catastrophe cover, not a fitted value. It is written to `artifacts/trigger_params.json` as `event_merge_hours`.
+
+One payout per policy, per outage event, per tier. If an outage first qualifies at 4h and later passes 24h, the second payment is the difference, sent as a separate payout with its own key (see `CONTRACTS.md` section 7).
 
 Known limitation to state in the README: under R2 a member with no witness still gets 50%, and under R4 a member with a witness can get nothing. That could discourage registering a witness. A production design would price the two cases differently.
 
@@ -68,9 +70,11 @@ Known limitation to state in the README: under R2 a member with no witness still
 
 All fitted on 2014–2022, evaluated on 2023–2024.
 
-**5.1 Event reconstruction.** From EAGLE-I 15-minute rows per county: compute share out = customers out / county customers. Build events as runs at or above a threshold, bridging gaps of up to 30 minutes. EAGLE-I does not record zero-outage intervals and has scrape gaps during some large events. Detect gaps, report how many intervals are missing per county-year, and exclude county-years below a coverage floor from fitting. Report results with and without the exclusion.
+**5.1 Event reconstruction.** From EAGLE-I 15-minute rows per county: compute share out = customers out / county customers. Build events as runs at or above a threshold. Missing data never ends an event: a run of missing 15-minute intervals of up to 2 hours is bridged when the readings on both sides are at or above the threshold. An event ends on an observed reading below the threshold, or on a gap longer than 2 hours. The 2-hour bridge is checked against the gap lengths inside large events in the training years only; if that evidence shows it is clearly wrong, a different value is proposed with the evidence, never tuned on 2023–2024. Whether zero-outage rows are recorded is checked per year (the 2024 file records them). EAGLE-I has scrape gaps and partial-feed dropouts during some large events.
 
-**5.2 Frequency.** Count of qualifying events per county-month. Negative-binomial GLM with month-of-year and state effects. Compare against two baselines on the test years: a Poisson GLM and the county's historical mean rate. Report predicted versus realised counts, out-of-sample deviance, and a calibration table.
+County customers come from the dataset's county customer file (`MCC.csv`), not a yearly `total_customers` column. The share is capped at 1.0, and every county-year where customers out exceeds the county count is listed in `data_quality.json`. Timestamps are treated as UTC; this is checked against a known storm (the Houston derecho struck in the early evening local time on 16 May 2024) and the finding is reported. Runs are then merged into events by the hours clause in section 4. Detect gaps, report how many intervals are missing per county-year, and exclude county-years below a coverage floor from fitting. Report results with and without the exclusion.
+
+**5.2 Frequency.** Count of qualifying events per county-month, after merging by the hours clause. Negative-binomial GLM with month-of-year and state effects. Compare against two baselines on the test years: a Poisson GLM and the county's historical mean rate. Report predicted versus realised counts, out-of-sample deviance, and a calibration table.
 
 **5.3 Severity.** Event durations above 4 hours. Fit a generalised Pareto distribution to the excess. Use it for P(duration at or above 24h | event). Report a QQ plot's data and a goodness-of-fit statistic.
 
@@ -105,9 +109,11 @@ Replays of real EAGLE-I windows, precomputed by `ml/` into `artifacts/scenarios/
 
 | Scenario | Window | Shows |
 |---|---|---|
-| `beryl-harris-2024` | Harris County, July 2024 | R1: index and witness agree, payout fires at hour 4, top-up at hour 24 |
+| `derecho-harris-2024` | Harris County, May 2024 (Houston derecho) | R1: index and witness agree, payout fires at hour 4, top-up at hour 24 |
 | `spoof-quiet` | A quiet week in any demo county | R5: phone unplugged, index quiet, no payout |
 | `local-outage` | A window where the share sits between `theta_lo` and `theta_hi` for 4h or more | R3: witness upgrades a lenient index event |
+
+Hurricane Beryl (Harris County, July 2024) stays in the backtest with its feed gap disclosed: the feed is missing its onset. It becomes a second scenario, `beryl-harris-2024`, only if its onset can be shown without inventing data. Before building scenario files, `ml/` reports data completeness for both storm windows.
 
 `ml/` selects the `local-outage` window from the data after thresholds are chosen. If no such window exists in the demo counties, say so and drop the scenario; do not construct one.
 
@@ -115,14 +121,16 @@ Replays of real EAGLE-I windows, precomputed by `ml/` into `artifacts/scenarios/
 
 ## 8. Witness
 
-A page in the frontend, opened on a phone. It:
+A page in the frontend, opened on any device that stays on a charger at the premises and runs a browser with the Battery Status API, such as an Android phone or a laptop in Chrome. The demo uses a MacBook in Chrome. It:
 
 - Generates an ECDSA P-256 key pair with WebCrypto and registers the public key.
 - Watches charger state through the Battery Status API where the browser supports it.
 - Appends signed, hash-chained entries (format in `CONTRACTS.md` section 6), stores them locally, and uploads them when online. It keeps logging while offline.
 - Shows its own state: charging or not, entries queued, last upload.
 
-Fallback when the Battery Status API is missing: a "Power is out" / "Power is back" button pair. Entries made this way have kind `attest`, and the UI labels them "self-reported". Self-reported entries are treated the same as sensed ones by the rules; the README says so.
+Fallback when the Battery Status API is missing: a "Power is out" / "Power is back" button pair. Entries made this way have kind `attest`, and the UI labels them "self-reported". Self-reported entries are treated the same as sensed ones by the rules; the README says so. On iOS, where Safari has no Battery Status API, the page offers self-reported entries only.
+
+Witness outage intervals come only from `power_lost` and `power_restored` entries (or their `attest_*` forms), never from missing heartbeats: a hidden tab or a sleeping device stops heartbeats without any loss of power.
 
 ## 9. Scope
 
@@ -149,5 +157,5 @@ Judges may never run the app, and part of judging may be automated. The README m
 ## 11. Video storyboard (under 3 minutes)
 
 - **0:00–1:00.** The USDA quote over a fridge. A seller in Harris County gets a quote with its breakdown, saves PayPal, first premium shows completed.
-- **1:00–2:00.** Replay Beryl at speed. The index climbs. The phone is unplugged on camera and its log appears. The 4-hour clock runs out, the claim fires, the payout lands in the sandbox account. Then the spoof scenario is declined with its reason.
+- **1:00–2:00.** Replay the Houston derecho at speed. The index climbs. The witness laptop is unplugged on camera and its log appears. The 4-hour clock runs out, the claim fires, the payout lands in the sandbox account. Then the spoof scenario is declined with its reason.
 - **2:00–3:00.** Backtest on years the model never saw. Basis-risk result on Indian premises data. Limitations card. Close.

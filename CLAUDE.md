@@ -56,7 +56,7 @@ Do not add a framework or service not listed here without saying why in your rep
 1. **No invented numbers.** Every metric shown in the UI, the README or the video comes from a file in `artifacts/` that code in `ml/` generated from real data. Each artifact carries a `provenance` block (`CONTRACTS.md` section 8). If a number can't be computed yet, the UI shows "not computed", not a placeholder value.
 2. **Label what is simulated.** Members, their loss amounts, and replayed outages are simulated. The UI says so wherever they appear. Historical outage data and model results are real and are labelled as real.
 3. **No leakage.** Models are fitted on 2014–2022 and evaluated on 2023–2024. Nothing from the test years touches fitting, threshold selection or tuning. The split is enforced in one place in `ml/` and tested. Owner: ml-engineer.
-4. **Idempotent money.** Every PayPal call that moves money carries the idempotency key defined in `CONTRACTS.md` section 7. The database enforces one payout per (policy, outage event). This applies to the Go service.
+4. **Idempotent money.** Every PayPal call that moves money carries the idempotency key defined in `CONTRACTS.md` section 7. The database enforces one payout per (policy, outage event, tier). This applies to the Go service.
 5. **Money is integer cents.** USD only. Never floats for amounts. In the Go service, amounts are `int64` cents; never `float64`.
 6. **Sandbox only.** The Go service refuses to start unless `PAYPAL_BASE_URL` is `https://api-m.sandbox.paypal.com`.
 7. **Secrets stay out of git.** Credentials live in `.env`. `.env.example` lists the names with empty values.

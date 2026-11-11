@@ -1,6 +1,6 @@
 # FourHour: contracts
 
-Version: 1.2
+Version: 1.3
 
 This file is the single source of truth for every interface between the backend, the frontend, the ML pipeline and PayPal. Change it before changing code. Only the lead edits it (see `CLAUDE.md`).
 
@@ -8,6 +8,7 @@ Changelog:
 - 1.0: initial.
 - 1.1: backend moves from Python to Go; ML stays in Python and meets the backend only at `artifacts/`. No field, endpoint, event, key or route changed. Section 2: `DATABASE_URL` default is now a plain SQLite file path for the `modernc.org/sqlite` driver. Section 6: signature verification described for Go `crypto/ecdsa` (raw r and s, JWK x and y) instead of Python DER; the hash input string must be built explicitly to match `JSON.stringify`, not with `encoding/json`. Section 8: the backend validates artifacts at startup and reports a missing or malformed file through `/api/health` instead of crashing.
 - 1.2: answers to Gate 1 (K4) questions. Section 1: ID prefixes `wen_` and `led_`. Section 2: added `PORT` and `VITE_USE_MOCK`. Section 3: nullability stated; `refunds.created_at` added; `ledger_entries` unique on (`kind`, `ref_id`); rejected witness entries are stored (unparseable ones are not; they are rejected as `malformed`) and the (`device_id`, `seq`) uniqueness applies to valid rows only. Section 4: policy responses never include vault tokens; `/api/health` may return `503 database_unavailable`; scenarios carry `is_fixture`; `GET /api/claims/{id}` shape fixed. Section 5: `snapshot` body fixed and now includes claims decided so far. Section 8: `artifacts_loaded` names; `pricing_table.counties` keyed by FIPS; `stop_loss` keys in cents; basis-risk notes live in `provenance.notes`. The remaining artifact inner shapes are still open (see the note under the table).
+- 1.3: Gate 2 decisions D1–D9. Section 2: added `DEMO_VAULT_TOKEN`, `SANDBOX_MEMBER_EMAIL`, `SANDBOX_PAYOUT_EMAIL`. Section 3: an outage event is merged runs under the 72-hour hours clause; missing data never ends an event. Section 4: example scenario ID is now `derecho-harris-2024`. Section 5: `tick` `share` and `customers_out` may be null for a missing interval. Section 7: P5 duplicate `sender_batch_id` is not a failure; P4 needs no `stored_credential`; payout confirmation takes about 20–25 seconds in sandbox. Section 3: test cover of 100 cents for seeded sandbox test policies; payout amounts rounded down to a whole cent. Section 8: `trigger_params.json` adds `event_merge_hours` (72) and `gap_bridge_minutes` becomes 120; a missing 15-minute row in a scenario `series` is a point with `customers_out` and `share` null.
 
 ## 1. Conventions
 
@@ -37,6 +38,9 @@ Changelog:
 | `DATABASE_URL` | backend | SQLite file path for the `modernc.org/sqlite` driver. Default `./fourhour.db` |
 | `ARTIFACTS_DIR` | backend | Default `../artifacts` |
 | `PORT` | backend | Port to listen on. Default `8080`. Render sets it |
+| `DEMO_VAULT_TOKEN` | backend (seed command, integration test) | Payment token saved in S1, used to seed a demo policy with no browser step |
+| `SANDBOX_MEMBER_EMAIL` | backend (seed command, integration test) | Sandbox personal account used as the demo member |
+| `SANDBOX_PAYOUT_EMAIL` | backend (integration test) | Sandbox personal account that receives test payouts |
 | `VITE_API_BASE_URL` | frontend | Backend base URL including `/api` |
 | `VITE_USE_MOCK` | frontend | `true` serves every endpoint and the stream from the frontend's mock layer. Default `false` |
 
@@ -46,11 +50,15 @@ Enums are stored as strings. A field that only gets a value later (PayPal IDs, e
 
 **members**: `id`, `name`, `email`, `paypal_email` (the sandbox personal account that receives payouts), `created_at`.
 
-**policies**: `id`, `member_id`, `fips`, `cover_cents` (5000, 15000 or 30000), `premium_cents`, `status` (`pending_vault` | `active` | `cancelled`), `vault_setup_token`, `vault_payment_token`, `model_version`, `created_at`, `cancelled_at`.
+**policies**: `id`, `member_id`, `fips`, `cover_cents` (5000, 15000 or 30000; or 100 for a seeded test policy, see below), `premium_cents`, `status` (`pending_vault` | `active` | `cancelled`), `vault_setup_token`, `vault_payment_token`, `model_version`, `created_at`, `cancelled_at`.
+
+**Test cover.** The seed command (sandbox only) may create a policy with `cover_cents` 100 and `premium_cents` 100, so integration runs charge and pay at most $1.00. Such a policy has `model_version` `test-cover` and is labelled "test cover" in the UI. `POST /api/quotes` and `POST /api/policies` never accept 100.
+
+**Payout amounts** are `cover_cents` × the schedule share × the rule's factor (R2: 50%), computed in integer arithmetic and rounded down to a whole cent.
 
 **premium_charges**: `id`, `policy_id`, `period` (`YYYY-MM`), `amount_cents`, `request_id` (unique), `paypal_order_id`, `paypal_capture_id`, `status` (`created` | `completed` | `failed` | `refunded`), `created_at`. Unique on (`policy_id`, `period`).
 
-**outage_events**: `id`, `fips`, `scenario_id` (null when not from a replay), `lo_started_at`, `lo_ended_at`, `hi_started_at`, `hi_ended_at`, `peak_share`. An event is one continuous run at or above `theta_lo`. The `hi_*` fields describe the longest run at or above `theta_hi` inside it, and are null if there is none. End times are null while the run is open.
+**outage_events**: `id`, `fips`, `scenario_id` (null when not from a replay), `lo_started_at`, `lo_ended_at`, `hi_started_at`, `hi_ended_at`, `peak_share`. An event is a run at or above `theta_lo`, where missing intervals of up to `gap_bridge_minutes` between readings at or above the threshold do not end it, and runs starting within `event_merge_hours` of the previous run's end are merged into it (`SPEC.md` section 4, hours clause). The `hi_*` fields describe the longest run at or above `theta_hi` inside it, and are null if there is none. End times are null while the run is open.
 
 **witness_devices**: `id`, `policy_id`, `public_key_jwk`, `registered_at`, `last_seq`, `last_hash`.
 
@@ -145,11 +153,11 @@ Entries must arrive in `seq` order starting at `last_seq + 1`. A resend of an al
 
 ### Replay
 
-`GET /api/replay/scenarios` → `{ "scenarios": [ { "id": "beryl-harris-2024", "title": "...", "fips": "48201", "start": "...", "end": "...", "description": "...", "is_fixture": false } ] }`
+`GET /api/replay/scenarios` → `{ "scenarios": [ { "id": "derecho-harris-2024", "title": "...", "fips": "48201", "start": "...", "end": "...", "description": "...", "is_fixture": false } ] }`
 `is_fixture` is true for fixture scenarios named `fixture-*`; the UI labels them.
 
 `POST /api/replay/start`
-Request: `{ "scenario_id": "beryl-harris-2024", "speed": 3600 }` (`speed` is simulated seconds per real second)
+Request: `{ "scenario_id": "derecho-harris-2024", "speed": 3600 }` (`speed` is simulated seconds per real second)
 Response: `{ "replay_id": "...", "sim_start": "...", "sim_end": "..." }`
 One replay runs at a time. Starting a new one stops the old one.
 
@@ -180,7 +188,7 @@ Deletes outage events, witness entries, claims and payouts rows created by repla
 
 | Event | Extra fields | Sent when |
 |---|---|---|
-| `tick` | `share`, `customers_out`, `fips` | Every simulated 15 minutes |
+| `tick` | `share`, `customers_out`, `fips` | Every simulated 15 minutes. `share` and `customers_out` are null for a missing interval |
 | `event_opened` | `outage_event_id`, `threshold` (`lo` or `hi`) | The share crosses a threshold upward |
 | `event_closed` | `outage_event_id`, `threshold`, `duration_hours` | The share falls below it |
 | `witness_entry` | `device_id`, `policy_id`, `kind`, `valid` | A witness entry is accepted or rejected |
@@ -242,6 +250,12 @@ References: developer.paypal.com/docs/api/payment-tokens/v3/, /docs/api/orders/v
 
 **P4 success** means the order status is `COMPLETED` and the capture inside it is `COMPLETED`. A capture that is `PENDING` is stored as `created`, not `completed`, and is not added to the ledger until a webhook or a later read confirms it.
 
+**P4 vaulted charge.** Confirmed in S1: no `stored_credential` field is needed. Repeating the order with the same `PayPal-Request-Id` returns the original order with HTTP 200.
+
+**P5 duplicate batch.** Confirmed in S2: repeating a `sender_batch_id` returns HTTP 400 with `name` `USER_BUSINESS_ERROR`, `details[0].field` `SENDER_BATCH_ID` and `issue` "Batch with given sender_batch_id already exists", with `details[0].link[0].href` pointing at the original batch. This is not a failure. The backend reads the original batch ID from that link, fetches it with P6, updates the payout row from it and continues from its status. Any other 400 is a failure.
+
+**P5 timing.** In S2 the batch went `PENDING` → `PROCESSING` → `SUCCESS` in about 20–25 seconds. `PROCESSING` counts as still pending. The UI shows a visible "sending" state for that time.
+
 **P5 funding.** Payouts are paid from the sandbox business account's balance. Check the balance in the sandbox dashboard before a demo.
 
 **Order of writes for any money call:** insert the local row with its key and status `created` → call PayPal → update the row from the response. If the process dies between the call and the update, the same key on retry returns PayPal's original result. The unique constraints in section 3 stop a second local row.
@@ -277,7 +291,7 @@ Files in `artifacts/`, written by `ml/`, read by the backend, shown by the front
 
 | File | Contents |
 |---|---|
-| `trigger_params.json` | `theta_hi`, `theta_lo`, `gap_bridge_minutes`, and `grid`: every candidate pair with its expected wrong and missed payouts |
+| `trigger_params.json` | `theta_hi`, `theta_lo`, `gap_bridge_minutes` (120), `event_merge_hours` (72), and `grid`: every candidate pair with its expected wrong and missed payouts |
 | `pricing_table.json` | `model_version`; `counties`: an object keyed by FIPS, each value holding `expected_events_per_year`, `prob_24h_given_event`, `prob_premises_affected`, `credibility_weight`; `rates`: `risk_margin_rate`, `expense_load_cents`; `payout_schedule`: `{ "t4": 0.6, "t24": 1.0 }` |
 | `backtest.json` | `frequency`: per county and year, predicted and realised event counts, for the NB model and both baselines, plus deviance and calibration bins; `severity`: GPD parameters, fit statistic, QQ points; `credibility`: weight per county; `pool`: per test year, premiums, payouts, loss ratio, events |
 | `solvency.json` | `members`, `simulations`, `ruin_probability`, `capital_1_in_200_cents`, `stop_loss`: `attachment_cents`, `limit_cents`, `price_cents`; `annual_loss_quantiles` |
@@ -287,7 +301,7 @@ Files in `artifacts/`, written by `ml/`, read by the backend, shown by the front
 
 A field that could not be computed is `null` with the reason in `provenance.notes`. It is never filled with a plausible value.
 
-Still open, to be fixed before tasks M1–M6 and E1: the item shape of `trigger_params.grid`; the inner shapes of `backtest`; `annual_loss_quantiles`; where the four basis-risk schemes sit and their count keys; the types of `fit_period` and `score_period`; the row key of `data_quality.json`; the type of a scenario's `source`; how a missing 15-minute row appears in a scenario `series`. Until then, producers and consumers treat these as open and do not invent keys.
+Still open, to be fixed before tasks M1–M6 and E1: the item shape of `trigger_params.grid`; the inner shapes of `backtest`; `annual_loss_quantiles`; where the four basis-risk schemes sit and their count keys; the types of `fit_period` and `score_period`; the row key of `data_quality.json`; the type of a scenario's `source`. A missing 15-minute row in a scenario `series` is a point with `customers_out` and `share` set to null. Until then, producers and consumers treat these as open and do not invent keys.
 
 The Go service validates each artifact against the shape above at startup. A missing or malformed file does not crash it: the file is left out of `artifacts_loaded` in `/api/health`, and the reason is logged.
 
