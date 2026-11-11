@@ -1,0 +1,1 @@
+{"model_version":null,"counties":{},"rates":null,"payout_schedule":null,"provenance":{"generated_at":"2026-11-11T00:00:00Z","git_commit":"fixture","code":"backend/internal/artifacts/testdata (hand-written test fixture)","data_sources":[],"train_years":[2014,2022],"test_years":[2023,2024],"seed":null,"notes":"FIXTURE for backend tests only. Not real data. Every value is null."}}

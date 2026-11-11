@@ -1,19 +1,20 @@
 # FourHour: contracts
 
-Version: 1.1
+Version: 1.2
 
 This file is the single source of truth for every interface between the backend, the frontend, the ML pipeline and PayPal. Change it before changing code. Only the lead edits it (see `CLAUDE.md`).
 
 Changelog:
 - 1.0: initial.
 - 1.1: backend moves from Python to Go; ML stays in Python and meets the backend only at `artifacts/`. No field, endpoint, event, key or route changed. Section 2: `DATABASE_URL` default is now a plain SQLite file path for the `modernc.org/sqlite` driver. Section 6: signature verification described for Go `crypto/ecdsa` (raw r and s, JWK x and y) instead of Python DER; the hash input string must be built explicitly to match `JSON.stringify`, not with `encoding/json`. Section 8: the backend validates artifacts at startup and reports a missing or malformed file through `/api/health` instead of crashing.
+- 1.2: answers to Gate 1 (K4) questions. Section 1: ID prefixes `wen_` and `led_`. Section 2: added `PORT` and `VITE_USE_MOCK`. Section 3: nullability stated; `refunds.created_at` added; `ledger_entries` unique on (`kind`, `ref_id`); rejected witness entries are stored (unparseable ones are not; they are rejected as `malformed`) and the (`device_id`, `seq`) uniqueness applies to valid rows only. Section 4: policy responses never include vault tokens; `/api/health` may return `503 database_unavailable`; scenarios carry `is_fixture`; `GET /api/claims/{id}` shape fixed. Section 5: `snapshot` body fixed and now includes claims decided so far. Section 8: `artifacts_loaded` names; `pricing_table.counties` keyed by FIPS; `stop_loss` keys in cents; basis-risk notes live in `provenance.notes`. The remaining artifact inner shapes are still open (see the note under the table).
 
 ## 1. Conventions
 
 - **JSON** field names are `snake_case`.
 - **Time** is ISO 8601 UTC with a `Z` suffix, e.g. `2024-07-08T09:15:00Z`.
 - **Money** is integer cents in a field ending `_cents`. Currency is USD. When sent to PayPal it is formatted as a decimal string with two places (`"150.00"`).
-- **IDs** are a type prefix plus 12 lowercase base32 characters: `mem_`, `pol_`, `chg_`, `evt_`, `dev_`, `clm_`, `pay_`, `rfd_`.
+- **IDs** are a type prefix plus 12 lowercase base32 characters: `mem_`, `pol_`, `chg_`, `evt_`, `dev_`, `clm_`, `pay_`, `rfd_`, `wen_` (witness entry), `led_` (ledger entry).
 - **County** is a 5-digit FIPS string, e.g. `"48201"`.
 - **Errors** from the backend use one shape, with the matching HTTP status:
 
@@ -35,11 +36,13 @@ Changelog:
 | `FRONTEND_URL` | backend | Where to redirect after vault approval; also the CORS origin |
 | `DATABASE_URL` | backend | SQLite file path for the `modernc.org/sqlite` driver. Default `./fourhour.db` |
 | `ARTIFACTS_DIR` | backend | Default `../artifacts` |
+| `PORT` | backend | Port to listen on. Default `8080`. Render sets it |
 | `VITE_API_BASE_URL` | frontend | Backend base URL including `/api` |
+| `VITE_USE_MOCK` | frontend | `true` serves every endpoint and the stream from the frontend's mock layer. Default `false` |
 
 ## 3. Data model
 
-Enums are stored as strings.
+Enums are stored as strings. A field that only gets a value later (PayPal IDs, end times, `cancelled_at`, `confirmed_at`, `confirmed_via`, `sim_time`, `reject_reason`, vault tokens) is null until then. Every other field is required.
 
 **members**: `id`, `name`, `email`, `paypal_email` (the sandbox personal account that receives payouts), `created_at`.
 
@@ -51,17 +54,17 @@ Enums are stored as strings.
 
 **witness_devices**: `id`, `policy_id`, `public_key_jwk`, `registered_at`, `last_seq`, `last_hash`.
 
-**witness_entries**: `id`, `device_id`, `seq`, `device_time`, `kind`, `charging`, `battery_level`, `online`, `prev_hash`, `hash`, `sig`, `received_at`, `sim_time` (null outside a replay), `valid`, `reject_reason`. Unique on (`device_id`, `seq`).
+**witness_entries**: `id`, `device_id`, `seq`, `device_time`, `kind`, `charging`, `battery_level`, `online`, `prev_hash`, `hash`, `sig`, `received_at`, `sim_time` (null outside a replay), `valid`, `reject_reason`. Rejected entries are stored for audit with `valid = false`, their values as received and a `reject_reason`. Unique on (`device_id`, `seq`) among valid rows only, so a corrected resend of a rejected `seq` can be stored. An entry that cannot be parsed (a missing field or a wrong JSON type) is not stored; it is returned in `rejected` with reason `malformed`.
 
 **claims**: `id`, `policy_id`, `outage_event_id`, `tier` (`t4` | `t24`), `rule` (`R1`..`R5`), `decision` (`paid` | `declined` | `review`), `amount_cents`, `reason` (one plain sentence), `decided_at`, `sim_time`. Unique on (`policy_id`, `outage_event_id`, `tier`).
 
 **payouts**: `id`, `claim_id` (unique), `sender_batch_id` (unique), `paypal_batch_id`, `paypal_item_id`, `amount_cents`, `status` (`created` | `pending` | `success` | `failed` | `unclaimed`), `created_at`, `confirmed_at`, `confirmed_via` (`webhook` | `poll`).
 
-**refunds**: `id`, `premium_charge_id`, `amount_cents`, `request_id` (unique), `paypal_refund_id`, `status` (`created` | `completed` | `failed`).
+**refunds**: `id`, `premium_charge_id`, `amount_cents`, `request_id` (unique), `paypal_refund_id`, `status` (`created` | `completed` | `failed`), `created_at`.
 
 **webhook_events**: `id` (PayPal's event ID, unique), `event_type`, `resource_id`, `verified`, `received_at`, `payload_json`.
 
-**ledger_entries**: `id`, `at`, `kind` (`premium` | `payout` | `refund`), `amount_cents` (positive into the pool, negative out), `policy_id`, `ref_id`. Append-only: rows are never updated or deleted. Pool balance is the sum.
+**ledger_entries**: `id`, `at`, `kind` (`premium` | `payout` | `refund`), `amount_cents` (positive into the pool, negative out), `policy_id`, `ref_id` (the premium charge, payout or refund ID). Unique on (`kind`, `ref_id`), so a money movement is never appended twice. Append-only: rows are never updated or deleted. Pool balance is the sum.
 
 ## 4. REST API
 
@@ -70,6 +73,7 @@ All bodies are JSON. `200` unless stated.
 ### Reference data and quotes
 
 `GET /api/health` → `{ "status": "ok", "paypal_env": "sandbox", "artifacts_loaded": ["pricing_table", ...] }`
+`artifacts_loaded` lists the section 8 top-level artifacts that loaded and passed validation, by file name without `.json`. Scenario files are listed by `/api/replay/scenarios`, not here. If the database cannot be reached it returns `503` with code `database_unavailable` in the error shape.
 
 `GET /api/counties` → `{ "counties": [ { "fips": "48201", "name": "Harris County", "state": "TX", "data_coverage": 0.97 } ] }`
 
@@ -103,6 +107,8 @@ The numbers above only illustrate the shape. Real values come from `artifacts/pr
 `POST /api/members` → `201`
 Request: `{ "name": "...", "email": "...", "paypal_email": "..." }`
 Response: the member row.
+
+Policy rows in any API response never include `vault_setup_token` or `vault_payment_token`. They stay in the database.
 
 `POST /api/policies` → `201`
 Request: `{ "member_id": "mem_...", "fips": "48201", "cover_cents": 15000 }`
@@ -139,7 +145,8 @@ Entries must arrive in `seq` order starting at `last_seq + 1`. A resend of an al
 
 ### Replay
 
-`GET /api/replay/scenarios` → `{ "scenarios": [ { "id": "beryl-harris-2024", "title": "...", "fips": "48201", "start": "...", "end": "...", "description": "..." } ] }`
+`GET /api/replay/scenarios` → `{ "scenarios": [ { "id": "beryl-harris-2024", "title": "...", "fips": "48201", "start": "...", "end": "...", "description": "...", "is_fixture": false } ] }`
+`is_fixture` is true for fixture scenarios named `fixture-*`; the UI labels them.
 
 `POST /api/replay/start`
 Request: `{ "scenario_id": "beryl-harris-2024", "speed": 3600 }` (`speed` is simulated seconds per real second)
@@ -157,7 +164,7 @@ Deletes outage events, witness entries, claims and payouts rows created by repla
 
 `GET /api/claims` → `{ "claims": [ { ...claim row..., "payout": {...} | null, "member_name": "...", "fips": "..." } ] }`
 
-`GET /api/claims/{id}` → the claim, its payout, the outage event, the index series for the event window, and the witness entries that were used.
+`GET /api/claims/{id}` → `{ "claim": {...same shape as an item of GET /api/claims, including payout...}, "outage_event": {...row...}, "index_series": [ { "t": "...", "customers_out": 0, "share": 0.0 } ], "witness_entries": [ {...row...} ] }`. `index_series` covers the event window. `witness_entries` are the entries the rule engine used.
 
 `GET /api/ledger` → `{ "balance_cents": 123400, "entries": [ ... ] }`
 
@@ -182,7 +189,7 @@ Deletes outage events, witness entries, claims and payouts rows created by repla
 | `payout_confirmed` | `payout` (full row) | A webhook or poll confirmed the payout |
 | `replay_ended` | `replay_id` | The scenario finished or was stopped |
 
-The frontend must tolerate reconnects: on connect, the server first sends a `snapshot` event with the current replay state (`replay_id`, `scenario_id`, `sim_time`, open events, the series so far).
+The frontend must tolerate reconnects: on connect, the server first sends a `snapshot` event with the current replay state: `{ "replay_id", "scenario_id", "sim_time", "open_events": [ outage_event rows ], "series": [ tick bodies so far ], "claims": [ claims decided in this replay, same shape as GET /api/claims items ] }`. When no replay is running, `replay_id`, `scenario_id` and `sim_time` are null and the lists are empty.
 
 ## 6. Witness log format
 
@@ -271,14 +278,16 @@ Files in `artifacts/`, written by `ml/`, read by the backend, shown by the front
 | File | Contents |
 |---|---|
 | `trigger_params.json` | `theta_hi`, `theta_lo`, `gap_bridge_minutes`, and `grid`: every candidate pair with its expected wrong and missed payouts |
-| `pricing_table.json` | `model_version`; `counties`: per FIPS, the fields of the quote `breakdown` that don't depend on cover; `rates`: `risk_margin_rate`, `expense_load_cents`; `payout_schedule`: `{ "t4": 0.6, "t24": 1.0 }` |
+| `pricing_table.json` | `model_version`; `counties`: an object keyed by FIPS, each value holding `expected_events_per_year`, `prob_24h_given_event`, `prob_premises_affected`, `credibility_weight`; `rates`: `risk_margin_rate`, `expense_load_cents`; `payout_schedule`: `{ "t4": 0.6, "t24": 1.0 }` |
 | `backtest.json` | `frequency`: per county and year, predicted and realised event counts, for the NB model and both baselines, plus deviance and calibration bins; `severity`: GPD parameters, fit statistic, QQ points; `credibility`: weight per county; `pool`: per test year, premiums, payouts, loss ratio, events |
-| `solvency.json` | `members`, `simulations`, `ruin_probability`, `capital_1_in_200_cents`, `stop_loss`: attachment, limit, price; `annual_loss_quantiles` |
-| `basis_risk.json` | Per scheme (`index_only`, `rules_perfect_witness`, `rules_10pct_missing`, `rules_30pct_missing`): premises-events, `missed_rate`, `wrong_rate`, counts; `districts_used`; `fit_period`, `score_period` |
+| `solvency.json` | `members`, `simulations`, `ruin_probability`, `capital_1_in_200_cents`, `stop_loss`: `attachment_cents`, `limit_cents`, `price_cents`; `annual_loss_quantiles` |
+| `basis_risk.json` | Per scheme (`index_only`, `rules_perfect_witness`, `rules_10pct_missing`, `rules_30pct_missing`): premises-events, `missed_rate`, `wrong_rate`, counts; `districts_used`; `fit_period`, `score_period`. Caveats (perfect witness, upper bound) go in `provenance.notes` |
 | `data_quality.json` | Per county-year: expected intervals, intervals present, coverage share, whether excluded from fitting |
 | `scenarios/{id}.json` | `id`, `title`, `description`, `fips`, `county_customers`, `start`, `end`, `series`: list of `{ "t": "...", "customers_out": 0, "share": 0.0 }` at 15-minute steps, `source` |
 
 A field that could not be computed is `null` with the reason in `provenance.notes`. It is never filled with a plausible value.
+
+Still open, to be fixed before tasks M1–M6 and E1: the item shape of `trigger_params.grid`; the inner shapes of `backtest`; `annual_loss_quantiles`; where the four basis-risk schemes sit and their count keys; the types of `fit_period` and `score_period`; the row key of `data_quality.json`; the type of a scenario's `source`; how a missing 15-minute row appears in a scenario `series`. Until then, producers and consumers treat these as open and do not invent keys.
 
 The Go service validates each artifact against the shape above at startup. A missing or malformed file does not crash it: the file is left out of `artifacts_loaded` in `/api/health`, and the reason is logged.
 

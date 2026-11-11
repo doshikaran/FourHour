@@ -1,0 +1,24 @@
+[project]
+name = "fourhour-ml"
+version = "0.1.0"
+description = "FourHour offline data pipeline: EAGLE-I and ESMI ingest, models, artifacts"
+requires-python = ">=3.12"
+# Pinned to the versions installed and tested on 2026-11-11 (Python 3.14.7).
+dependencies = [
+    "numpy==2.5.4",
+    "pandas==3.1.1",
+    "pyarrow==26.0.1",
+    "scipy==1.18.1",
+    "statsmodels==0.15.0",
+]
+
+[dependency-groups]
+dev = ["pytest==9.2.0"]
+
+[tool.setuptools]
+packages = ["fourhour_ml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

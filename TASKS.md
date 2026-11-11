@@ -16,9 +16,10 @@ Each spike is one small program with its own README line saying how to run it an
 - [ ] **S2 `[BE]` write, `[HUMAN]` run: payout.** Go program in `spikes/paypal/`. Send a $1.00 payout to a sandbox personal account, then poll it.
   Done when: batch status is `SUCCESS` and the recipient's sandbox balance went up. Then run it again with the same `sender_batch_id` and record what PayPal returns.
   If it fails: the product's money-out leg doesn't work. Stop and tell the humans.
-- [ ] **S3 `[ML]`: EAGLE-I.** Python script in `spikes/data/`. Download one yearly file and the county-customers file. Print the columns, the row count for the three demo counties, and reconstruct events of 4 hours or more for Harris County in that year.
+- [x] **S3 `[ML]`: EAGLE-I.** Python script in `spikes/data/`. Download one yearly file and the county-customers file. Print the columns, the row count for the three demo counties, and reconstruct events of 4 hours or more for Harris County in that year.
   Done when: the script runs from a clean checkout and prints an event list. Record the actual column names in `ml/README.md`.
-- [ ] **S4 `[ML]`: ESMI.** Python script in `spikes/data/`. Download the dataset from Harvard Dataverse, print its structure, count premises per district.
+  Evidence (2026-11-11): `ml/.venv/bin/python spikes/data/s3_eaglei.py` printed `S3 PASS` and the Harris 2024 event list (placeholder threshold 0.01, labelled). Column names recorded in `ml/README.md`.
+- [ ] **S4 `[ML]`: ESMI.** Blocked 2026-11-11: Dataverse requires a guestbook form (ID 251) for every download, API included. Humans download the files by hand into `ml/data/raw/esmi/`, then run `ml/.venv/bin/python spikes/data/s4_esmi.py`. Python script in `spikes/data/`. Download the dataset from Harvard Dataverse, print its structure, count premises per district.
   Done when: at least one district has enough premises to build an index (state the number and the cut-off you chose).
   If it fails: the basis-risk study can't be done on this data. Tell the lead; do not substitute simulated data.
 - [ ] **S5 `[FE]` write, `[HUMAN]` run: phone charger events.** A single HTML page that shows charging state and logs every change with a timestamp.
@@ -30,15 +31,20 @@ Each spike is one small program with its own README line saying how to run it an
 
 ## Phase 1: skeleton
 
-- [ ] **K1 `[LEAD]`:** `LICENSE` (MIT), `.gitignore`, `.env.example`, empty `README.md` with the section headings from `SPEC.md` section 10.
-- [ ] **K2 `[BE]`:** Go skeleton in `backend/`: Go module, config package, plain SQL migrations for every table in `CONTRACTS.md` section 3, `/api/health`, `go test` set up.
+- [x] **K1 `[LEAD]`:** `LICENSE` (MIT), `.gitignore`, `.env.example`, empty `README.md` with the section headings from `SPEC.md` section 10.
+  Evidence (2026-11-11): `LICENSE` (MIT, doshikaran, 2026), `.env.example` (CONTRACTS 1.2 section 2 names, empty), `README.md` with the SPEC section 10 headings, `.gitignore`.
+- [x] **K2 `[BE]`:** Go skeleton in `backend/`: Go module, config package, plain SQL migrations for every table in `CONTRACTS.md` section 3, `/api/health`, `go test` set up.
   Done when: `go test ./...` passes and the service refuses to start with a non-sandbox `PAYPAL_BASE_URL`.
-- [ ] **K2b `[ML]`:** Python project skeleton in `ml/` with the train/test split function, the artifact schema check, and pytest set up.
+  Evidence (2026-11-11): `go test -race ./...` in `backend/`: 5 packages ok; refusal tested by unit test and by hand (exit 1, no DB file). Caveat: Go 1.22.2 on macOS 26 needs `-ldflags=-linkmode=external` until Go is upgraded; without it 3 of 5 packages abort with `dyld: missing LC_UUID`.
+- [x] **K2b `[ML]`:** Python project skeleton in `ml/` with the train/test split function, the artifact schema check, and pytest set up.
   Done when: `pytest` passes, including a test of the split function and a test that the schema check rejects a malformed artifact.
-- [ ] **K3 `[FE]`:** frontend project with the routes in `CONTRACTS.md` section 9 as empty pages, a typed API client generated or hand-written from section 4, and a mock layer serving fixture responses for every endpoint and a scripted SSE stream.
+  Evidence (2026-11-11): `pytest` in `ml/`: 86 passed, including split-guard tests and 25+ malformed-artifact cases.
+- [x] **K3 `[FE]`:** frontend project with the routes in `CONTRACTS.md` section 9 as empty pages, a typed API client generated or hand-written from section 4, and a mock layer serving fixture responses for every endpoint and a scripted SSE stream.
   Done when: `npm run build` passes with strict TypeScript and every route renders against the mock.
-- [ ] **K4 `[LEAD]`:** read all three skeletons (K2, K2b, K3) against `CONTRACTS.md`. Fix any mismatch in the code, or change the contract by the process in `CLAUDE.md`.
-- [ ] **K5 `[LEAD]`:** `docker-compose.yml` at the repo root that builds and runs the backend and frontend, with `artifacts/` mounted read-only into the backend. Each service's Dockerfile is written by its owner (`[BE]`, `[FE]`).
+  Evidence (2026-11-11): `tsc --noEmit` OK, `npm run build` OK, `vitest`: 47 passed, including every section 9 route rendered against the mock; routes also loaded in headless Chrome via `vite preview`.
+- [x] **K4 `[LEAD]`:** read all three skeletons (K2, K2b, K3) against `CONTRACTS.md`. Fix any mismatch in the code, or change the contract by the process in `CLAUDE.md`.
+  Evidence (2026-11-11): Migration columns match section 3 exactly (scripted diff). Agent questions answered in CONTRACTS 1.2; backend, frontend and ML re-aligned and re-tested (BE 5 ok, FE 47 passed, ML 86 passed).
+- [ ] **K5 `[LEAD]`:** Deferred at Gate 1. `docker-compose.yml` at the repo root that builds and runs the backend and frontend, with `artifacts/` mounted read-only into the backend. Each service's Dockerfile is written by its owner (`[BE]`, `[FE]`).
   Done when: `docker compose up` serves the app from a clean clone.
 
 ## Phase 2: backend core loop

@@ -1,0 +1,4 @@
+# Derived slices of EAGLE-I and ESMI stay out of git until task S6 decides
+# whether they may be published. Rebuild them with: .venv/bin/python download.py
+data/derived/
+.venv/

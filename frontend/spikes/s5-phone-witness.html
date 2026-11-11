@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>FourHour S5 phone check</title>
+<!--
+  FourHour spike S5: does this phone's browser give the witness page what it needs?
+  One self-contained file, no build step, no network requests. See frontend/spikes/README.md.
+
+  "Copy results" produces one JSON object (format "fourhour-witness-fixture/1"):
+
+    fixture_format        string. "fourhour-witness-fixture/1".
+    generated_by          string. Path of this file.
+    generated_at          string. ISO 8601 UTC, Z, no milliseconds. Device clock at export.
+    user_agent            string. navigator.userAgent.
+    page_origin           string. Origin the page was served from.
+    public_key_jwk        object {kty, crv, x, y}. The public half of a P-256 key pair generated
+                          non-extractable on this phone. Same shape as POST /api/witness/devices.
+    genesis_hash          string. 64 zeros (CONTRACTS.md section 6).
+    entries               array of witness entries exactly as CONTRACTS.md section 6:
+                          {seq, device_time, kind, charging, battery_level, online, prev_hash, hash, sig}.
+                          seq 1..N, chained from genesis_hash, all signed by public_key_jwk.
+                          Can be posted unchanged as the "entries" of POST /api/witness/entries.
+    hash_inputs           array of strings, same order as entries. The exact string that was
+                          SHA-256 hashed for each entry (built with JSON.stringify in this browser).
+    entry_notes           array of strings, same order as entries. Says which values were read
+                          from the device and which are chosen test values (see below).
+    test_signature        {message, sig, sig_bytes, verified, tampered_verified}. A signature over
+                          the UTF-8 bytes of "message", raw r||s base64url without padding.
+    checks                object, one key per check: {status: "PASS"|"FAIL"|"PENDING"|"N/A", detail}.
+    battery_log           array of {device_time, charging, level, event}. Every Battery API change seen.
+    network_log           array of {device_time, online, event}. Every online/offline change seen.
+    visibility_log        array of {device_time, state}. Page hidden/visible changes.
+
+  Entry 1 uses the real charging state and battery level from the Battery Status API (or null
+  battery_level if the API is missing). Entries 2 onwards use the real device_time and online value
+  but chosen kinds, charging values and battery_level test values (0.5, 0.83, null, 1, 0.00001,
+  0.30000000000000004) so the backend can test its JSON.stringify-compatible number formatting.
+  Their signatures and hashes are real, produced by this browser.
+-->
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --text: #1b1d1f; --muted: #5b6168; --line: #d9dcdf;
+    --pass-bg: #e3f3e8; --pass-fg: #135c2c; --fail-bg: #fbe4e2; --fail-fg: #8f1d14;
+    --pend-bg: #eef0f3; --pend-fg: #39414a; --accent: #1f4e8c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121416; --card: #1c1f22; --text: #eceef0; --muted: #a6adb4; --line: #33383d;
+      --pass-bg: #163a22; --pass-fg: #a8e6bb; --fail-bg: #45191a; --fail-fg: #ffb3ab;
+      --pend-bg: #2a2f34; --pend-fg: #d4d9de; --accent: #8fb8f0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 1.35rem; margin: 4px 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: .95rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 0 0 12px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .head h2 { font-size: 1.05rem; margin: 0; }
+  .badge { font-weight: 700; font-size: .85rem; letter-spacing: .02em; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .PASS { background: var(--pass-bg); color: var(--pass-fg); }
+  .FAIL { background: var(--fail-bg); color: var(--fail-fg); }
+  .PENDING, .N\/A { background: var(--pend-bg); color: var(--pend-fg); }
+  .detail { margin: 8px 0 0; color: var(--muted); font-size: .95rem; overflow-wrap: anywhere; }
+  .big { font-size: 1.6rem; font-weight: 700; margin: 8px 0 0; }
+  pre, textarea { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+    margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
+  button { font: inherit; font-weight: 600; min-height: 48px; padding: 10px 16px; border-radius: 10px;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--card); cursor: pointer; }
+  button.secondary { background: transparent; color: var(--accent); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  textarea { width: 100%; min-height: 180px; margin-top: 10px; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  label, .lbl { display: block; font-weight: 600; font-size: 1rem; margin: 10px 0 0; }
+  .status { margin-top: 8px; font-weight: 600; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FourHour phone check (S5)</h1>
+  <p class="sub">Tests what the witness page needs on this phone. Nothing is sent anywhere. Keep this page open and the screen on while testing.</p>
+
+  <section class="card" aria-labelledby="sum-h">
+    <div class="head"><h2 id="sum-h">Summary</h2><span id="sum-badge" class="badge PENDING">PENDING</span></div>
+    <p class="detail" id="sum-detail">Running checks…</p>
+  </section>
+
+  <div id="checks"></div>
+
+  <section class="card" aria-labelledby="charger-h">
+    <h2 id="charger-h" style="font-size:1.05rem;margin:0">Charger test</h2>
+    <p class="detail">1. Tap "I am unplugging now" and unplug the charger within a second. 2. Wait for a "charging: false" line. 3. Tap "I am plugging in now" and plug it back in. The log shows how many seconds each change took to appear.</p>
+    <p class="big" id="charging-now" aria-live="polite">Charging: unknown</p>
+    <div class="row">
+      <button type="button" class="secondary" id="mark-unplug">I am unplugging now</button>
+      <button type="button" class="secondary" id="mark-plug">I am plugging in now</button>
+    </div>
+    <pre id="battery-log" aria-live="polite" aria-label="Battery log">No battery events yet.</pre>
+  </section>
+
+  <section class="card" aria-labelledby="net-h">
+    <h2 id="net-h" style="font-size:1.05rem;margin:0">Network log</h2>
+    <p class="detail">Turn on airplane mode, wait, then turn it off. Each change should add a line.</p>
+    <pre id="net-log" aria-live="polite" aria-label="Network log">No network changes yet.</pre>
+  </section>
+
+  <section class="card" aria-labelledby="entry-h">
+    <h2 id="entry-h" style="font-size:1.05rem;margin:0">Test entry 1: hash input and hash</h2>
+    <h3 class="lbl">Hash input string</h3>
+    <pre id="hash-input">not computed</pre>
+    <h3 class="lbl">SHA-256 (hex)</h3>
+    <pre id="hash-out">not computed</pre>
+    <h3 class="lbl">Signature (base64url, raw r‖s)</h3>
+    <pre id="sig-out">not computed</pre>
+  </section>
+
+  <section class="card" aria-labelledby="copy-h">
+    <h2 id="copy-h" style="font-size:1.05rem;margin:0">Send the results</h2>
+    <p class="detail">Reload the page once first (for the storage check; a reload clears the logs), then do the charger and network tests, then copy. The results include the public key and signed test entries; they contain no secrets.</p>
+    <div class="row">
+      <button type="button" id="copy-btn">Copy results</button>
+      <button type="button" class="secondary" id="share-btn" hidden>Share…</button>
+      <button type="button" class="secondary" id="download-btn">Download .json</button>
+    </div>
+    <p class="status" id="copy-status" role="status" aria-live="polite"></p>
+    <label for="results">Results JSON (tap, select all, copy if the buttons fail)</label>
+    <textarea id="results" readonly spellcheck="false">not computed</textarea>
+  </section>
+</main>
+
+<script>
+"use strict";
+(function () {
+  var GENESIS = "0000000000000000000000000000000000000000000000000000000000000000";
+  var STORAGE_KEY = "fourhour-spike-s5";
+
+  // ---------- helpers ----------
+  function isoNow(d) {
+    // ISO 8601 UTC, Z suffix, no milliseconds (CONTRACTS.md section 1 and 6).
+    return (d || new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
+  }
+  function isoMs(d) { return (d || new Date()).toISOString(); }
+  function toHex(buf) {
+    var b = new Uint8Array(buf), s = "";
+    for (var i = 0; i < b.length; i++) s += b[i].toString(16).padStart(2, "0");
+    return s;
+  }
+  function b64url(buf) {
+    var b = new Uint8Array(buf), s = "";
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  function errText(e) { return (e && (e.name ? e.name + ": " : "") + (e.message || String(e))) || "unknown error"; }
+
+  // ---------- check registry ----------
+  var CHECKS = [
+    ["secure_context", "1. Secure context (HTTPS)"],
+    ["battery_api", "2a. Battery Status API present"],
+    ["battery_change_seen", "2b. Charger change reported"],
+    ["webcrypto", "3. WebCrypto ECDSA P-256"],
+    ["hash_chain", "4. Log entry and hash (section 6)"],
+    ["storage_write_read", "5a. Local storage write and read back"],
+    ["storage_persisted", "5b. Local storage survived a reload"],
+    ["online_events", "6a. Online/offline events supported"],
+    ["online_change_seen", "6b. Network change reported"],
+    ["wake_lock", "Extra. Screen wake lock"]
+  ];
+  var state = { checks: {}, battery_log: [], network_log: [], visibility_log: [],
+                entries: [], hash_inputs: [], entry_notes: [], public_key_jwk: null, test_signature: null };
+  var container = document.getElementById("checks");
+  CHECKS.forEach(function (c) {
+    var sec = document.createElement("section");
+    sec.className = "card";
+    sec.innerHTML = '<div class="head"><h2></h2><span class="badge PENDING">PENDING</span></div><p class="detail">Waiting…</p>';
+    sec.querySelector("h2").textContent = c[1];
+    sec.id = "check-" + c[0];
+    container.appendChild(sec);
+    state.checks[c[0]] = { status: "PENDING", detail: "Waiting…" };
+  });
+  function setCheck(key, status, detail) {
+    state.checks[key] = { status: status, detail: detail };
+    var sec = document.getElementById("check-" + key);
+    var badge = sec.querySelector(".badge");
+    badge.className = "badge " + status;
+    badge.textContent = status;
+    sec.querySelector(".detail").textContent = detail;
+    renderSummary();
+    renderResults();
+  }
+  function renderSummary() {
+    var fails = [], pend = [];
+    CHECKS.forEach(function (c) {
+      if (c[0] === "wake_lock") return; // extra, not part of S5 pass/fail
+      var s = state.checks[c[0]].status;
+      if (s === "FAIL") fails.push(c[1]);
+      if (s === "PENDING") pend.push(c[1]);
+    });
+    var badge = document.getElementById("sum-badge"), det = document.getElementById("sum-detail");
+    if (fails.length) { badge.className = "badge FAIL"; badge.textContent = "FAIL"; det.textContent = fails.length + " failed: " + fails.join("; ") + (pend.length ? ". Still waiting: " + pend.join("; ") : ""); }
+    else if (pend.length) { badge.className = "badge PENDING"; badge.textContent = "PENDING"; det.textContent = "No failures so far. Still waiting: " + pend.join("; "); }
+    else { badge.className = "badge PASS"; badge.textContent = "PASS"; det.textContent = "All S5 checks passed or not applicable (the Extra check is not counted)."; }
+  }
+
+  // ---------- 1. secure context ----------
+  setCheck("secure_context", window.isSecureContext ? "PASS" : "FAIL",
+    window.isSecureContext ? "Served from " + location.origin
+      : "Not a secure context (" + location.origin + "). Battery and WebCrypto need HTTPS. Use the tunnel URL from the README.");
+
+  // ---------- 2. battery ----------
+  var marks = { unplug: null, plug: null };
+  var batteryState = { charging: null, level: null };
+  function logBattery(event, b) {
+    var now = new Date();
+    var line = { device_time: isoMs(now), event: event, charging: b ? b.charging : null, level: b ? b.level : null };
+    var extra = "";
+    if (event === "chargingchange") {
+      var m = b.charging ? marks.plug : marks.unplug;
+      if (m) { line.seconds_since_mark = (now - m) / 1000; extra = "  (" + line.seconds_since_mark.toFixed(1) + " s after you tapped)"; }
+      if (b.charging) marks.plug = null; else marks.unplug = null;
+    }
+    state.battery_log.push(line);
+    var pre = document.getElementById("battery-log");
+    if (state.battery_log.length === 1) pre.textContent = "";
+    pre.textContent += line.device_time + "  " + event + "  charging: " + line.charging + "  level: " + line.level + extra + "\n";
+    pre.scrollTop = pre.scrollHeight;
+    renderResults();
+  }
+  function showCharging(b) {
+    document.getElementById("charging-now").textContent =
+      "Charging: " + (b.charging ? "yes (plugged in)" : "no (unplugged)") + ", battery " + Math.round(b.level * 100) + "%";
+  }
+  document.getElementById("mark-unplug").addEventListener("click", function () { marks.unplug = new Date(); logBattery("you_tapped_unplugging", null); });
+  document.getElementById("mark-plug").addEventListener("click", function () { marks.plug = new Date(); logBattery("you_tapped_plugging_in", null); });
+
+  function setupBattery() {
+    if (typeof navigator.getBattery !== "function") {
+      setCheck("battery_api", "FAIL", "navigator.getBattery is not available in this browser. The witness page would use the manual \"Power is out\" / \"Power is back\" buttons (attest_* entries).");
+      setCheck("battery_change_seen", "N/A", "No Battery Status API, so no charger events can be reported.");
+      document.getElementById("charging-now").textContent = "Charging: not available in this browser";
+      return Promise.resolve();
+    }
+    return navigator.getBattery().then(function (b) {
+      batteryState = b;
+      setCheck("battery_api", "PASS", "Present. charging=" + b.charging + ", level=" + b.level + ".");
+      setCheck("battery_change_seen", "PENDING", "Unplug and replug the charger.");
+      showCharging(b);
+      logBattery("initial", b);
+      b.addEventListener("chargingchange", function () {
+        showCharging(b); logBattery("chargingchange", b);
+        var changes = state.battery_log.filter(function (l) { return l.event === "chargingchange"; });
+        var both = changes.some(function (l) { return l.charging === true; }) && changes.some(function (l) { return l.charging === false; });
+        setCheck("battery_change_seen", both ? "PASS" : "PENDING",
+          changes.length + " charger change(s) seen" + (both ? ", both unplug and replug." : ". Now do the opposite (plug in or unplug)."));
+      });
+      b.addEventListener("levelchange", function () { showCharging(b); logBattery("levelchange", b); });
+    }).catch(function (e) {
+      setCheck("battery_api", "FAIL", "getBattery() exists but failed: " + errText(e));
+      setCheck("battery_change_seen", "N/A", "Battery API failed.");
+    });
+  }
+
+  // ---------- 3 + 4. WebCrypto and hash chain ----------
+  function hashInputFor(e) {
+    // CONTRACTS.md section 6: fields in this order, no spaces, numbers as JSON.stringify writes them.
+    return JSON.stringify({ seq: e.seq, device_time: e.device_time, kind: e.kind, charging: e.charging,
+      battery_level: e.battery_level, online: e.online, prev_hash: e.prev_hash });
+  }
+  function sha256Hex(s) { return crypto.subtle.digest("SHA-256", utf8(s)).then(toHex); }
+  var ECDSA_SIGN = { name: "ECDSA", hash: { name: "SHA-256" } };
+
+  function makeEntry(keys, seq, prevHash, kind, charging, level, note) {
+    var e = { seq: seq, device_time: isoNow(), kind: kind, charging: charging, battery_level: level,
+              online: navigator.onLine, prev_hash: prevHash };
+    var input = hashInputFor(e);
+    return sha256Hex(input).then(function (h) {
+      e.hash = h;
+      return crypto.subtle.sign(ECDSA_SIGN, keys.privateKey, utf8(h));
+    }).then(function (sig) {
+      if (sig.byteLength !== 64) throw new Error("signature is " + sig.byteLength + " bytes, expected 64");
+      e.sig = b64url(sig);
+      return crypto.subtle.verify(ECDSA_SIGN, keys.publicKey, sig, utf8(e.hash));
+    }).then(function (ok) {
+      if (!ok) throw new Error("entry " + seq + " signature did not verify");
+      state.entries.push(e); state.hash_inputs.push(input); state.entry_notes.push(note);
+      return e;
+    });
+  }
+
+  function setupCrypto() {
+    if (!window.crypto || !crypto.subtle) {
+      setCheck("webcrypto", "FAIL", "crypto.subtle is not available (it needs a secure context).");
+      setCheck("hash_chain", "FAIL", "Needs WebCrypto.");
+      return Promise.resolve();
+    }
+    var keys, notes = [];
+    return crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, false, ["sign", "verify"]).then(function (k) {
+      keys = k;
+      notes.push("key pair generated, private key extractable=" + k.privateKey.extractable);
+      if (k.privateKey.extractable !== false) throw new Error("private key is extractable");
+      return crypto.subtle.exportKey("jwk", k.privateKey).then(
+        function () { throw new Error("private key export unexpectedly succeeded"); },
+        function () { notes.push("private key export refused (good)"); });
+    }).then(function () {
+      return crypto.subtle.exportKey("jwk", keys.publicKey);
+    }).then(function (jwk) {
+      state.public_key_jwk = { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y };
+      notes.push("public JWK exported");
+      var msg = "fourhour-s5-test " + isoNow();
+      var sigBuf;
+      return crypto.subtle.sign(ECDSA_SIGN, keys.privateKey, utf8(msg)).then(function (s) {
+        sigBuf = s;
+        return crypto.subtle.verify(ECDSA_SIGN, keys.publicKey, s, utf8(msg));
+      }).then(function (ok) {
+        return crypto.subtle.verify(ECDSA_SIGN, keys.publicKey, sigBuf, utf8(msg + "x")).then(function (tamperedOk) {
+          state.test_signature = { message: msg, sig: b64url(sigBuf), sig_bytes: sigBuf.byteLength, verified: ok, tampered_verified: tamperedOk };
+          var pass = ok && !tamperedOk && sigBuf.byteLength === 64;
+          notes.push("signature " + sigBuf.byteLength + " bytes, verifies=" + ok + ", tampered message verifies=" + tamperedOk);
+          setCheck("webcrypto", pass ? "PASS" : "FAIL", notes.join("; ") + ".");
+          if (!pass) throw new Error("signature check failed");
+        });
+      });
+    }).then(function () {
+      // Entry 1 uses the real Battery API values; later entries use chosen test values (see header comment).
+      var realCharging = batteryState.charging === null ? false : batteryState.charging;
+      var realLevel = batteryState.level === null ? null : batteryState.level;
+      var plan = [
+        ["heartbeat", realCharging, realLevel, batteryState.level === null
+          ? "device_time and online are real; no Battery API, so charging=false and battery_level=null"
+          : "device_time, charging, battery_level and online are real readings"],
+        ["power_lost", false, 0.5, "kind, charging and battery_level are test values; device_time and online are real"],
+        ["power_restored", true, 0.83, "kind, charging and battery_level are test values; device_time and online are real"],
+        ["attest_lost", false, null, "kind, charging and battery_level are test values; device_time and online are real"],
+        ["attest_restored", true, 1, "kind, charging and battery_level are test values; device_time and online are real"],
+        ["heartbeat", true, 0.00001, "battery_level 0.00001 tests number formatting (JavaScript writes 0.00001)"],
+        ["heartbeat", true, 0.1 + 0.2, "battery_level 0.1+0.2 tests number formatting (JavaScript writes 0.30000000000000004)"]
+      ];
+      var prev = GENESIS, p = Promise.resolve();
+      plan.forEach(function (row, i) {
+        p = p.then(function () { return makeEntry(keys, i + 1, prev, row[0], row[1], row[2], row[3]); })
+             .then(function (e) { prev = e.hash; });
+      });
+      return p;
+    }).then(function () {
+      var e1 = state.entries[0];
+      document.getElementById("hash-input").textContent = state.hash_inputs[0];
+      document.getElementById("hash-out").textContent = e1.hash;
+      document.getElementById("sig-out").textContent = e1.sig;
+      // Re-check the chain end to end.
+      var ok = state.entries.every(function (e, i) {
+        return e.seq === i + 1 && e.prev_hash === (i === 0 ? GENESIS : state.entries[i - 1].hash)
+          && /^[0-9a-f]{64}$/.test(e.hash) && /^[A-Za-z0-9_-]{86}$/.test(e.sig);
+      });
+      setCheck("hash_chain", ok ? "PASS" : "FAIL", state.entries.length + " chained, signed entries built and verified in this browser. Entry 1 shown below.");
+    }).catch(function (e) {
+      if (state.checks.webcrypto.status === "PENDING") setCheck("webcrypto", "FAIL", (notes.length ? notes.join("; ") + "; " : "") + errText(e));
+      setCheck("hash_chain", "FAIL", "Not built: " + errText(e));
+    });
+  }
+
+  // ---------- 5. storage ----------
+  function setupStorage() {
+    var prev = null;
+    try {
+      prev = window.localStorage.getItem(STORAGE_KEY);
+      var val = JSON.stringify({ written_at: isoMs(), loads: prev ? (JSON.parse(prev).loads || 0) + 1 : 1 });
+      window.localStorage.setItem(STORAGE_KEY, val);
+      var back = window.localStorage.getItem(STORAGE_KEY);
+      setCheck("storage_write_read", back === val ? "PASS" : "FAIL", back === val ? "Wrote and read back " + val : "Read back a different value: " + back);
+    } catch (e) {
+      setCheck("storage_write_read", "FAIL", "localStorage threw: " + errText(e) + ". Private browsing can cause this.");
+      setCheck("storage_persisted", "FAIL", "localStorage not usable.");
+      return;
+    }
+    if (prev) setCheck("storage_persisted", "PASS", "Found the value from an earlier load: " + prev);
+    else setCheck("storage_persisted", "PENDING", "Not yet known: reload this page to check.");
+  }
+
+  // ---------- 6. online/offline ----------
+  function logNet(event) {
+    var line = { device_time: isoMs(), event: event, online: navigator.onLine };
+    state.network_log.push(line);
+    var pre = document.getElementById("net-log");
+    if (state.network_log.length === 1) pre.textContent = "";
+    pre.textContent += line.device_time + "  " + event + "  navigator.onLine: " + line.online + "\n";
+    if (event !== "initial") {
+      var seen = state.network_log.filter(function (l) { return l.event !== "initial"; });
+      var both = seen.some(function (l) { return l.event === "offline"; }) && seen.some(function (l) { return l.event === "online"; });
+      setCheck("online_change_seen", both ? "PASS" : "PENDING", seen.length + " change(s) seen" + (both ? ", both offline and online." : ". Now switch back."));
+    }
+    renderResults();
+  }
+  function setupNetwork() {
+    var supported = "ononline" in window && "onoffline" in window && typeof navigator.onLine === "boolean";
+    setCheck("online_events", supported ? "PASS" : "FAIL", supported ? "navigator.onLine is " + navigator.onLine + "." : "online/offline events not supported.");
+    if (supported) setCheck("online_change_seen", "PENDING", "Turn airplane mode on, then off.");
+    else setCheck("online_change_seen", "N/A", "Not supported.");
+    logNet("initial");
+    window.addEventListener("online", function () { logNet("online"); });
+    window.addEventListener("offline", function () { logNet("offline"); });
+    document.addEventListener("visibilitychange", function () {
+      state.visibility_log.push({ device_time: isoMs(), state: document.visibilityState });
+      renderResults();
+    });
+  }
+
+  // ---------- extra: wake lock ----------
+  function setupWakeLock() {
+    if (!("wakeLock" in navigator)) { setCheck("wake_lock", "N/A", "Screen Wake Lock API not available. Set the phone's auto-lock to Never for the witness."); return; }
+    function req() {
+      return navigator.wakeLock.request("screen").then(function () {
+        setCheck("wake_lock", "PASS", "Screen wake lock acquired; the screen should stay on while this page is visible.");
+      }).catch(function (e) { setCheck("wake_lock", "FAIL", "Wake lock refused: " + errText(e) + ". Set auto-lock to Never instead."); });
+    }
+    req();
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") req(); });
+  }
+
+  // ---------- results ----------
+  function buildResults() {
+    return {
+      fixture_format: "fourhour-witness-fixture/1",
+      generated_by: "frontend/spikes/s5-phone-witness.html",
+      generated_at: isoNow(),
+      user_agent: navigator.userAgent,
+      page_origin: location.origin,
+      public_key_jwk: state.public_key_jwk,
+      genesis_hash: GENESIS,
+      entries: state.entries,
+      hash_inputs: state.hash_inputs,
+      entry_notes: state.entry_notes,
+      test_signature: state.test_signature,
+      checks: state.checks,
+      battery_log: state.battery_log,
+      network_log: state.network_log,
+      visibility_log: state.visibility_log
+    };
+  }
+  function resultsText() { return JSON.stringify(buildResults(), null, 2); }
+  function renderResults() {
+    var ta = document.getElementById("results");
+    if (ta) ta.value = resultsText();
+  }
+  function status(msg) { document.getElementById("copy-status").textContent = msg; }
+
+  document.getElementById("copy-btn").addEventListener("click", function () {
+    var text = resultsText();
+    var ta = document.getElementById("results");
+    ta.value = text;
+    function fallback(reason) {
+      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      status(ok ? "Copied (fallback method). Paste it into a message to the team."
+                : "Could not copy automatically (" + reason + "). The text box below is selected: use the phone's Copy, or use Share or Download.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { status("Copied " + text.length + " characters. Paste it into a message to the team."); },
+        function (e) { fallback(errText(e)); });
+    } else fallback("Clipboard API not available");
+  });
+
+  if (navigator.share) {
+    var sb = document.getElementById("share-btn");
+    sb.hidden = false;
+    sb.addEventListener("click", function () {
+      navigator.share({ title: "FourHour S5 results", text: resultsText() }).then(
+        function () { status("Shared."); },
+        function (e) { if (e && e.name !== "AbortError") status("Share failed: " + errText(e)); });
+    });
+  }
+  document.getElementById("download-btn").addEventListener("click", function () {
+    try {
+      var blob = new Blob([resultsText()], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "fourhour-s5-" + isoNow().replace(/[:]/g, "") + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+      status("Download started. Check the phone's Downloads or Files app.");
+    } catch (e) { status("Download failed: " + errText(e)); }
+  });
+
+  // ---------- run ----------
+  setupStorage();
+  setupNetwork();
+  setupWakeLock();
+  // Battery first so entry 1 can use the real reading.
+  setupBattery().then(setupCrypto).then(renderResults);
+})();
+</script>
+</body>
+</html>
