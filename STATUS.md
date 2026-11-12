@@ -23,7 +23,7 @@ Resume from this file and `TASKS.md` alone.
 | B4 hosted run | script ready, hosted run blocked on B2 | `scripts/judge-e2e.mjs`; local spoof run PASS: R5 claim `clm_fjfmccpsoh2s`, no payout. Derecho mode not run locally (it sends a payout) |
 | B5 audit | running | independent reviewer |
 | B6 licences | done | `ml/README.md`: figshare API + DataCite agree CC BY 4.0; Dataverse API + DataCite agree CC0 1.0; landing pages bot-blocked (202, empty). README attribution now names the creators and links the licence |
-| B7 screens | blocked on B2 | |
+| B7 screens | script ready, hosted capture blocked on B2 | `scripts/capture-screens.mjs` (Playwright + system Chrome, hard timeouts). Local test PASS: 8 routes captured, spoof video recorded, R5 claim `clm_jlk4azx25d32` |
 | B8 submission pack | drafted | `docs/VIDEO_SCRIPT.md` (~390 words), `docs/DEVPOST.md`, `docs/SUBMISSION_CHECKLIST.md`. Demo URL and video URL placeholders until deploy/upload; numbers to re-check against AUDIT.md |
 
 
