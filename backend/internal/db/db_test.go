@@ -55,7 +55,7 @@ func seed(t *testing.T, d *sql.DB) {
 	mustExec(t, d, `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_a','mem_a','48201',15000,412,'active','m1',?)`, ts)
 	mustExec(t, d, `INSERT INTO outage_events (id,fips,lo_started_at,peak_share) VALUES ('evt_a','48201',?,0.3)`, ts)
 	mustExec(t, d, `INSERT INTO witness_devices (id,policy_id,public_key_jwk,registered_at) VALUES ('dev_a','pol_a','{}',?)`, ts)
-	mustExec(t, d, `INSERT INTO claims VALUES ('clm_a','pol_a','evt_a','t4','R1','paid',9000,'r',?,NULL)`, ts)
+	mustExec(t, d, `INSERT INTO claims VALUES ('clm_a','pol_a','evt_a','t4','R1','paid',9000,'r',?,NULL,NULL)`, ts)
 }
 
 func TestMigrateIdempotent(t *testing.T) {
@@ -125,8 +125,8 @@ func TestUniqueConstraints(t *testing.T) {
 		mustFail(t, d, "UNIQUE", valid, "wen_7", 2, ts, zeros, ts)
 	})
 	t.Run("claims policy+event+tier", func(t *testing.T) {
-		mustFail(t, d, "UNIQUE", `INSERT INTO claims VALUES ('clm_b','pol_a','evt_a','t4','R1','paid',9000,'r',?,NULL)`, ts)
-		mustExec(t, d, `INSERT INTO claims VALUES ('clm_c','pol_a','evt_a','t24','R1','paid',6000,'r',?,NULL)`, ts)
+		mustFail(t, d, "UNIQUE", `INSERT INTO claims VALUES ('clm_b','pol_a','evt_a','t4','R1','paid',9000,'r',?,NULL,NULL)`, ts)
+		mustExec(t, d, `INSERT INTO claims VALUES ('clm_c','pol_a','evt_a','t24','R1','paid',6000,'r',?,NULL,NULL)`, ts)
 	})
 	t.Run("payouts claim_id", func(t *testing.T) {
 		mustExec(t, d, `INSERT INTO payouts (id,claim_id,sender_batch_id,amount_cents,status,created_at) VALUES ('pay_1','clm_a','clm-pol_a-evt_a-t4',9000,'created',?)`, ts)
@@ -161,7 +161,7 @@ func TestCheckAndForeignKeys(t *testing.T) {
 	mustFail(t, d, "CHECK", `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_x','mem_a','48201',10000,1,'active','m',?)`, ts)
 	mustFail(t, d, "CHECK", `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_x','mem_a','4820A',15000,1,'active','m',?)`, ts)
 	mustFail(t, d, "CHECK", `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_x','mem_a','48201',15000,1,'open','m',?)`, ts)
-	mustFail(t, d, "CHECK", `INSERT INTO claims VALUES ('clm_x','pol_a','evt_a','t8','R1','paid',1,'r',?,NULL)`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO claims VALUES ('clm_x','pol_a','evt_a','t8','R1','paid',1,'r',?,NULL,NULL)`, ts)
 	// Value checks bind valid rows only.
 	mustFail(t, d, "CHECK", `INSERT INTO witness_entries VALUES ('wen_x','dev_a',1,?,'unplugged',0,NULL,1,'p','h','s',?,NULL,1,NULL)`, ts, ts)
 	mustFail(t, d, "CHECK", `INSERT INTO witness_entries VALUES ('wen_x','dev_a',1,?,'heartbeat',0,1.5,1,'p','h','s',?,NULL,1,NULL)`, ts, ts)
@@ -200,4 +200,21 @@ func TestOpenRejectsQueryInPath(t *testing.T) {
 	if _, err := Open(context.Background(), "x.db?mode=ro"); err == nil {
 		t.Error("want error")
 	}
+}
+
+func TestTestCoverAndR5Claims(t *testing.T) {
+	d := openMigrated(t)
+	seed(t, d)
+	ts := "2026-11-11T00:00:00Z"
+	// cover 100 only as a seeded test policy.
+	mustExec(t, d, `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_t','mem_a','48201',100,100,'active','test-cover',?)`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_u','mem_a','48201',100,100,'active','m1',?)`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO policies (id,member_id,fips,cover_cents,premium_cents,status,model_version,created_at) VALUES ('pol_u','mem_a','48201',100,412,'active','test-cover',?)`, ts)
+	mustExec(t, d, `INSERT INTO witness_entries VALUES ('wen_l','dev_a',1,?,'power_lost',0,NULL,1,'p','h','s',?,NULL,1,NULL)`, ts, ts)
+	// R5: no outage event, keyed by the witness entry.
+	mustExec(t, d, `INSERT INTO claims VALUES ('clm_r5','pol_a',NULL,'t4','R5','review',0,'r',?,NULL,'wen_l')`, ts)
+	mustFail(t, d, "UNIQUE", `INSERT INTO claims VALUES ('clm_r5b','pol_a',NULL,'t4','R5','review',0,'r',?,NULL,'wen_l')`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO claims VALUES ('clm_r5c','pol_a',NULL,'t4','R5','review',0,'r',?,NULL,NULL)`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO claims VALUES ('clm_r2','pol_a',NULL,'t4','R2','paid',1,'r',?,NULL,NULL)`, ts)
+	mustFail(t, d, "CHECK", `INSERT INTO claims VALUES ('clm_r2','pol_a','evt_a','t24','R2','paid',1,'r',?,NULL,'wen_l')`, ts)
 }

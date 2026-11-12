@@ -1,0 +1,273 @@
+{
+ "id": "fixture-outage-harris",
+ "title": "Fixture: synthetic outage (not real data)",
+ "description": "Hand-written test series for the backend replay loop: 6 hours at a 95% share with a 1-hour missing-data gap inside it, so a run at or above the strong threshold reaches 4 hours with either the fixture or the real trigger parameters. Not EAGLE-I data; the dates are deliberately in the year 2000.",
+ "fips": "48201",
+ "county_customers": 1000000,
+ "start": "2000-01-01T00:00:00Z",
+ "end": "2000-01-01T11:45:00Z",
+ "series": [
+  {
+   "t": "2000-01-01T00:00:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T00:15:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T00:30:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T00:45:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T01:00:00Z",
+   "customers_out": 20000,
+   "share": 0.02
+  },
+  {
+   "t": "2000-01-01T01:15:00Z",
+   "customers_out": 20000,
+   "share": 0.02
+  },
+  {
+   "t": "2000-01-01T01:30:00Z",
+   "customers_out": 20000,
+   "share": 0.02
+  },
+  {
+   "t": "2000-01-01T01:45:00Z",
+   "customers_out": 20000,
+   "share": 0.02
+  },
+  {
+   "t": "2000-01-01T02:00:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T02:15:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T02:30:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T02:45:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T03:00:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T03:15:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T03:30:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T03:45:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T04:00:00Z",
+   "customers_out": null,
+   "share": null
+  },
+  {
+   "t": "2000-01-01T04:15:00Z",
+   "customers_out": null,
+   "share": null
+  },
+  {
+   "t": "2000-01-01T04:30:00Z",
+   "customers_out": null,
+   "share": null
+  },
+  {
+   "t": "2000-01-01T04:45:00Z",
+   "customers_out": null,
+   "share": null
+  },
+  {
+   "t": "2000-01-01T05:00:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T05:15:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T05:30:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T05:45:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T06:00:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T06:15:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T06:30:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T06:45:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T07:00:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T07:15:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T07:30:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T07:45:00Z",
+   "customers_out": 950000,
+   "share": 0.95
+  },
+  {
+   "t": "2000-01-01T08:00:00Z",
+   "customers_out": 500000,
+   "share": 0.5
+  },
+  {
+   "t": "2000-01-01T08:15:00Z",
+   "customers_out": 500000,
+   "share": 0.5
+  },
+  {
+   "t": "2000-01-01T08:30:00Z",
+   "customers_out": 500000,
+   "share": 0.5
+  },
+  {
+   "t": "2000-01-01T08:45:00Z",
+   "customers_out": 500000,
+   "share": 0.5
+  },
+  {
+   "t": "2000-01-01T09:00:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T09:15:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T09:30:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T09:45:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T10:00:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T10:15:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T10:30:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T10:45:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T11:00:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T11:15:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T11:30:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  },
+  {
+   "t": "2000-01-01T11:45:00Z",
+   "customers_out": 0,
+   "share": 0.0
+  }
+ ],
+ "source": {
+  "dataset": "FIXTURE (hand-written, not real data)",
+  "url": null,
+  "file": null,
+  "sha256": null
+ },
+ "provenance": {
+  "generated_at": "2026-11-12T00:00:00Z",
+  "git_commit": "fixture",
+  "code": "backend/internal/artifacts/fixtures (hand-written fixture)",
+  "data_sources": [],
+  "train_years": [
+   2014,
+   2022
+  ],
+  "test_years": [
+   2023,
+   2024
+  ],
+  "seed": null,
+  "notes": "FIXTURE. Synthetic series written by hand for backend tests and for running the loop before real scenario files exist. Not real data."
+ }
+}

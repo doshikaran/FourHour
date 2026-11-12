@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,9 +61,24 @@ func TestMissingEnvFileIsError(t *testing.T) {
 }
 
 func TestStringRedactsSecret(t *testing.T) {
-	c := Config{PayPalClientSecret: "hunter2"}
-	if strings.Contains(c.String(), "hunter2") || strings.Contains(c.GoString(), "hunter2") {
-		t.Error("secret leaked")
+	c := Config{PayPalClientSecret: "hunter2", DemoVaultToken: "vault-tok-9"}
+	for _, s := range []string{c.String(), c.GoString(), fmt.Sprintf("%v %+v %#v", c, c, c)} {
+		if strings.Contains(s, "hunter2") || strings.Contains(s, "vault-tok-9") {
+			t.Errorf("secret leaked: %s", s)
+		}
+	}
+}
+
+func TestDemoVarsAndIntegrationFlag(t *testing.T) {
+	c, err := Load(mapLookup(map[string]string{"PAYPAL_BASE_URL": SandboxBaseURL, "DEMO_VAULT_TOKEN": "t", "SANDBOX_MEMBER_EMAIL": "m@x", "SANDBOX_PAYOUT_EMAIL": "p@x"}), "")
+	if err != nil || c.DemoVaultToken != "t" || c.SandboxMemberEmail != "m@x" || c.SandboxPayoutEmail != "p@x" {
+		t.Fatalf("got %v %v", c, err)
+	}
+	if IntegrationEnabled(mapLookup(map[string]string{})) || IntegrationEnabled(mapLookup(map[string]string{IntegrationFlag: "true"})) {
+		t.Error("flag must be exactly 1")
+	}
+	if !IntegrationEnabled(mapLookup(map[string]string{IntegrationFlag: "1"})) {
+		t.Error("flag 1 not seen")
 	}
 }
 

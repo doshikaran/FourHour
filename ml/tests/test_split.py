@@ -76,6 +76,9 @@ def test_frame_without_time_information_is_refused():
 
 
 FIT_PREFIXES = ("fit_", "tune_", "choose_", "select_threshold", "grid_search")
+# The ESMI study (SPEC section 6) splits by halves of the ESMI period, not by EAGLE-I years,
+# so the year guard does not apply; its own split is tested in test_leakage.py.
+OWN_SPLIT = {"fourhour_ml.basis.choose_thresholds"}
 
 
 def test_every_fitting_function_in_the_package_is_guarded():
@@ -85,7 +88,7 @@ def test_every_fitting_function_in_the_package_is_guarded():
     for mod_info in pkgutil.walk_packages(fourhour_ml.__path__, "fourhour_ml."):
         mod = importlib.import_module(mod_info.name)
         for name, fn in inspect.getmembers(mod, inspect.isfunction):
-            if fn.__module__ == mod.__name__ and name.startswith(FIT_PREFIXES):
+            if fn.__module__ == mod.__name__ and name.startswith(FIT_PREFIXES) and f"{mod.__name__}.{name}" not in OWN_SPLIT:
                 if not getattr(fn, "__train_only__", False):
                     unguarded.append(f"{mod.__name__}.{name}")
     assert not unguarded, f"fitting functions without @train_only: {unguarded}"

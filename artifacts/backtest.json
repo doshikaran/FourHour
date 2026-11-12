@@ -1,0 +1,1399 @@
+{
+  "frequency": {
+    "threshold": "theta_lo",
+    "theta": 0.2,
+    "unit": "qualifying events per county-month",
+    "primary_variant": "exclude_low_coverage",
+    "variants": {
+      "exclude_low_coverage": {
+        "county_years_fitted": 144,
+        "per_county_year": [
+          {
+            "fips": "12009",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.5
+          },
+          {
+            "fips": "12009",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.5
+          },
+          {
+            "fips": "12011",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12011",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12057",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12057",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12071",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12071",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12086",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12086",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12095",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12095",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12099",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12099",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "12103",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12103",
+            "year": 2024,
+            "realised": 2,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12115",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12115",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.25
+          },
+          {
+            "fips": "12127",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.375
+          },
+          {
+            "fips": "12127",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.250179,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.375
+          },
+          {
+            "fips": "17031",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.0,
+            "poisson_glm": 0.0,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "17031",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.0,
+            "poisson_glm": 0.0,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48029",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "48029",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.125
+          },
+          {
+            "fips": "48039",
+            "year": 2023,
+            "realised": 2,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48039",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48113",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48113",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48157",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.2
+          },
+          {
+            "fips": "48157",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.2
+          },
+          {
+            "fips": "48167",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48167",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48201",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48201",
+            "year": 2024,
+            "realised": 2,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48215",
+            "year": 2023,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48215",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48339",
+            "year": 2023,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48339",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48355",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48355",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.4
+          },
+          {
+            "fips": "48439",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.2
+          },
+          {
+            "fips": "48439",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.2
+          },
+          {
+            "fips": "48451",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.333333
+          },
+          {
+            "fips": "48451",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.249814,
+            "poisson_glm": 0.25,
+            "historical_mean": 0.333333
+          }
+        ],
+        "deviance": {
+          "nb_glm": 130.233105,
+          "poisson_glm": 130.216402,
+          "historical_mean": null
+        },
+        "log_score": {
+          "nb_glm": 0.157999,
+          "poisson_glm": 0.157983,
+          "historical_mean": null
+        },
+        "calibration": {
+          "nb_glm": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.004758,
+              "realised_mean": 0.009434
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.008782,
+              "realised_mean": 0.047619
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.015927,
+              "realised_mean": 0.04717
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.028483,
+              "realised_mean": 0.0
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.041452,
+              "realised_mean": 0.075472
+            }
+          ],
+          "poisson_glm": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.004756,
+              "realised_mean": 0.009434
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.008783,
+              "realised_mean": 0.047619
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.01593,
+              "realised_mean": 0.04717
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.028487,
+              "realised_mean": 0.0
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.041453,
+              "realised_mean": 0.075472
+            }
+          ],
+          "historical_mean": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.003341,
+              "realised_mean": 0.028302
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.012976,
+              "realised_mean": 0.009524
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.020637,
+              "realised_mean": 0.028302
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.029325,
+              "realised_mean": 0.057143
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.03522,
+              "realised_mean": 0.056604
+            }
+          ]
+        },
+        "beats_baselines": false
+      },
+      "include_low_coverage": {
+        "county_years_fitted": 198,
+        "per_county_year": [
+          {
+            "fips": "12009",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.489796
+          },
+          {
+            "fips": "12009",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.489796
+          },
+          {
+            "fips": "12011",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12011",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12057",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12057",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12071",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12071",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12086",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12086",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12095",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12095",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12099",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12099",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "12103",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12103",
+            "year": 2024,
+            "realised": 2,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12115",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12115",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "12127",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.367347
+          },
+          {
+            "fips": "12127",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.243996,
+            "poisson_glm": 0.243856,
+            "historical_mean": 0.367347
+          },
+          {
+            "fips": "17031",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.0,
+            "poisson_glm": 0.0,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "17031",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.0,
+            "poisson_glm": 0.0,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48029",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48029",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48039",
+            "year": 2023,
+            "realised": 2,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48039",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48113",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48113",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48157",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48157",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48167",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48167",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48201",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48201",
+            "year": 2024,
+            "realised": 2,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48215",
+            "year": 2023,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48215",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.0
+          },
+          {
+            "fips": "48339",
+            "year": 2023,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48339",
+            "year": 2024,
+            "realised": 1,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48355",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48355",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48439",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48439",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.122449
+          },
+          {
+            "fips": "48451",
+            "year": 2023,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          },
+          {
+            "fips": "48451",
+            "year": 2024,
+            "realised": 0,
+            "nb_glm": 0.166189,
+            "poisson_glm": 0.166266,
+            "historical_mean": 0.244898
+          }
+        ],
+        "deviance": {
+          "nb_glm": 133.843875,
+          "poisson_glm": 133.837426,
+          "historical_mean": null
+        },
+        "log_score": {
+          "nb_glm": 0.161418,
+          "poisson_glm": 0.161412,
+          "historical_mean": null
+        },
+        "calibration": {
+          "nb_glm": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.004056,
+              "realised_mean": 0.018868
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.007763,
+              "realised_mean": 0.009524
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.012793,
+              "realised_mean": 0.075472
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.022177,
+              "realised_mean": 0.0
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.034022,
+              "realised_mean": 0.075472
+            }
+          ],
+          "poisson_glm": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.004055,
+              "realised_mean": 0.018868
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.007756,
+              "realised_mean": 0.009524
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.012791,
+              "realised_mean": 0.075472
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.022181,
+              "realised_mean": 0.0
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.034018,
+              "realised_mean": 0.075472
+            }
+          ],
+          "historical_mean": [
+            {
+              "bin": 1,
+              "n": 106,
+              "predicted_mean": 0.003273,
+              "realised_mean": 0.028302
+            },
+            {
+              "bin": 2,
+              "n": 105,
+              "predicted_mean": 0.010204,
+              "realised_mean": 0.009524
+            },
+            {
+              "bin": 3,
+              "n": 106,
+              "predicted_mean": 0.019927,
+              "realised_mean": 0.018868
+            },
+            {
+              "bin": 4,
+              "n": 105,
+              "predicted_mean": 0.020408,
+              "realised_mean": 0.07619
+            },
+            {
+              "bin": 5,
+              "n": 106,
+              "predicted_mean": 0.027339,
+              "realised_mean": 0.04717
+            }
+          ]
+        },
+        "beats_baselines": false
+      }
+    }
+  },
+  "severity": {
+    "threshold_hours": 4,
+    "n_events_train": 34,
+    "n_events_test": 19,
+    "gpd": {
+      "shape": -0.638346,
+      "scale": 104.13994,
+      "location_hours": 4
+    },
+    "ks_statistic": 0.146058,
+    "ks_pvalue": 0.42252,
+    "prob_24h_given_event": {
+      "fitted": 0.814744,
+      "empirical_train": 0.823529,
+      "empirical_test": 0.684211
+    },
+    "qq": [
+      {
+        "empirical_hours": 6.75,
+        "model_hours": 5.53557
+      },
+      {
+        "empirical_hours": 10.75,
+        "model_hours": 8.631815
+      },
+      {
+        "empirical_hours": 11.25,
+        "model_hours": 11.762715
+      },
+      {
+        "empirical_hours": 11.75,
+        "model_hours": 14.929774
+      },
+      {
+        "empirical_hours": 13.25,
+        "model_hours": 18.134619
+      },
+      {
+        "empirical_hours": 20.0,
+        "model_hours": 21.379004
+      },
+      {
+        "empirical_hours": 25.25,
+        "model_hours": 24.664832
+      },
+      {
+        "empirical_hours": 26.5,
+        "model_hours": 27.994168
+      },
+      {
+        "empirical_hours": 28.5,
+        "model_hours": 31.369265
+      },
+      {
+        "empirical_hours": 30.0,
+        "model_hours": 34.792586
+      },
+      {
+        "empirical_hours": 33.25,
+        "model_hours": 38.266831
+      },
+      {
+        "empirical_hours": 33.75,
+        "model_hours": 41.794976
+      },
+      {
+        "empirical_hours": 36.25,
+        "model_hours": 45.380311
+      },
+      {
+        "empirical_hours": 39.25,
+        "model_hours": 49.026492
+      },
+      {
+        "empirical_hours": 41.0,
+        "model_hours": 52.737599
+      },
+      {
+        "empirical_hours": 42.0,
+        "model_hours": 56.518213
+      },
+      {
+        "empirical_hours": 43.75,
+        "model_hours": 60.373503
+      },
+      {
+        "empirical_hours": 48.0,
+        "model_hours": 64.309348
+      },
+      {
+        "empirical_hours": 51.0,
+        "model_hours": 68.332477
+      },
+      {
+        "empirical_hours": 58.5,
+        "model_hours": 72.450658
+      },
+      {
+        "empirical_hours": 64.5,
+        "model_hours": 76.672943
+      },
+      {
+        "empirical_hours": 65.75,
+        "model_hours": 81.009995
+      },
+      {
+        "empirical_hours": 69.0,
+        "model_hours": 85.474524
+      },
+      {
+        "empirical_hours": 85.5,
+        "model_hours": 90.081902
+      },
+      {
+        "empirical_hours": 94.5,
+        "model_hours": 94.851031
+      },
+      {
+        "empirical_hours": 101.25,
+        "model_hours": 99.80563
+      },
+      {
+        "empirical_hours": 112.75,
+        "model_hours": 104.976186
+      },
+      {
+        "empirical_hours": 115.5,
+        "model_hours": 110.403101
+      },
+      {
+        "empirical_hours": 123.75,
+        "model_hours": 116.142027
+      },
+      {
+        "empirical_hours": 124.5,
+        "model_hours": 122.273663
+      },
+      {
+        "empirical_hours": 140.0,
+        "model_hours": 128.923739
+      },
+      {
+        "empirical_hours": 149.25,
+        "model_hours": 136.310453
+      },
+      {
+        "empirical_hours": 150.75,
+        "model_hours": 144.889012
+      },
+      {
+        "empirical_hours": 158.75,
+        "model_hours": 156.104932
+      }
+    ]
+  },
+  "credibility": {
+    "method": "buhlmann_straub",
+    "k": null,
+    "counties": {
+      "12009": {
+        "state": "FL",
+        "county_rate": 0.041667,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12011": {
+        "state": "FL",
+        "county_rate": 0.010417,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12057": {
+        "state": "FL",
+        "county_rate": 0.020833,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12071": {
+        "state": "FL",
+        "county_rate": 0.020833,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12086": {
+        "state": "FL",
+        "county_rate": 0.010417,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12095": {
+        "state": "FL",
+        "county_rate": 0.020833,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12099": {
+        "state": "FL",
+        "county_rate": 0.010417,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12103": {
+        "state": "FL",
+        "county_rate": 0.020833,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12115": {
+        "state": "FL",
+        "county_rate": 0.020833,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "12127": {
+        "state": "FL",
+        "county_rate": 0.03125,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "17031": {
+        "state": "IL",
+        "county_rate": 0.0,
+        "state_rate": 0.0,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.0
+      },
+      "48029": {
+        "state": "TX",
+        "county_rate": 0.010417,
+        "state_rate": 0.020833,
+        "exposure_months": 96,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48039": {
+        "state": "TX",
+        "county_rate": 0.033333,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48113": {
+        "state": "TX",
+        "county_rate": 0.033333,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48157": {
+        "state": "TX",
+        "county_rate": 0.016667,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48167": {
+        "state": "TX",
+        "county_rate": 0.033333,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48201": {
+        "state": "TX",
+        "county_rate": 0.0,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48215": {
+        "state": "TX",
+        "county_rate": 0.0,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48339": {
+        "state": "TX",
+        "county_rate": 0.033333,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48355": {
+        "state": "TX",
+        "county_rate": 0.033333,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48439": {
+        "state": "TX",
+        "county_rate": 0.016667,
+        "state_rate": 0.020833,
+        "exposure_months": 60,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      },
+      "48451": {
+        "state": "TX",
+        "county_rate": 0.027778,
+        "state_rate": 0.020833,
+        "exposure_months": 36,
+        "weight": 0.0,
+        "blended_rate": 0.020833
+      }
+    }
+  },
+  "pool": {
+    "members": 1000,
+    "years": [
+      {
+        "year": 2023,
+        "premiums_cents": 2708508,
+        "payouts_cents": 0,
+        "loss_ratio": 0.0,
+        "events": 0,
+        "events_by_county": {
+          "48201": 0,
+          "12086": 0,
+          "17031": 0
+        },
+        "claims_paid": 0
+      },
+      {
+        "year": 2024,
+        "premiums_cents": 2708508,
+        "payouts_cents": 3495000,
+        "loss_ratio": 1.290378,
+        "events": 2,
+        "events_by_county": {
+          "48201": 2,
+          "12086": 0,
+          "17031": 0
+        },
+        "claims_paid": 408
+      }
+    ]
+  },
+  "provenance": {
+    "generated_at": "2026-11-12T00:09:46Z",
+    "git_commit": "5a552e3-dirty",
+    "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_backtest",
+    "data_sources": [
+      {
+        "name": "EAGLE-I recorded outages 2014 (eaglei_outages_2014.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547717",
+        "sha256": "f292a9f99066ac686df69767c535b218e70b4d4e748840ec620eda3340f914c9",
+        "rows_used": 97410
+      },
+      {
+        "name": "EAGLE-I recorded outages 2015 (eaglei_outages_2015.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547822",
+        "sha256": "49de89b3427d564efbd9c80183caf4e9777966f7e319d4b30d682c1c0d064505",
+        "rows_used": 472210
+      },
+      {
+        "name": "EAGLE-I recorded outages 2016 (eaglei_outages_2016.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547825",
+        "sha256": "2c1b364a3b06aee56326174c4644750ea86ba9be4585c5e40eeb7835431bfc9c",
+        "rows_used": 391829
+      },
+      {
+        "name": "EAGLE-I recorded outages 2017 (eaglei_outages_2017.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547828",
+        "sha256": "47479c4fd645ec69685447f90baa51f08a85e776cedf612279b3e41c13147c8d",
+        "rows_used": 413268
+      },
+      {
+        "name": "EAGLE-I recorded outages 2018 (eaglei_outages_2018.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547879",
+        "sha256": "85e0a864aa272e75892e181f1da4754ed78f7bf0bef75a279d8ab381baa7db70",
+        "rows_used": 654008
+      },
+      {
+        "name": "EAGLE-I recorded outages 2019 (eaglei_outages_2019.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547885",
+        "sha256": "4cc277a138b326bd0e1f203558539a9422b40dacdf439e3d5b58ee71d7462d27",
+        "rows_used": 673076
+      },
+      {
+        "name": "EAGLE-I recorded outages 2020 (eaglei_outages_2020.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547894",
+        "sha256": "2a20b62e5245b1b9d4fcedc1bdbaf691bb1e17f75094975c8c6cb854f52e721a",
+        "rows_used": 678942
+      },
+      {
+        "name": "EAGLE-I recorded outages 2021 (eaglei_outages_2021.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547891",
+        "sha256": "e3e7ac40a40d92d92488501881ab381b8931833e486941424ac55ea20ffde319",
+        "rows_used": 700364
+      },
+      {
+        "name": "EAGLE-I recorded outages 2022 (eaglei_outages_2022.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547897",
+        "sha256": "ff8b58ae30fcbaf290f820bcd4f1420e536994bc9f0a87bb80991130478461b0",
+        "rows_used": 709225
+      },
+      {
+        "name": "EAGLE-I recorded outages 2023 (eaglei_outages_2023.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/44574907",
+        "sha256": "c028f42dae8522ecfb787ad0b6461cfc809bb04856eef20cb389e486d5657f7e",
+        "rows_used": 704594
+      },
+      {
+        "name": "EAGLE-I recorded outages 2024 (eaglei_outages_2024.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/53581661",
+        "sha256": "d5d75ea4ef3943446aaf0623e9b451cb4e7796d20cc379de9cf497106ebab2e6",
+        "rows_used": 707811
+      },
+      {
+        "name": "EAGLE-I modeled county customers (MCC.csv)",
+        "url": "https://ndownloader.figshare.com/files/42547708",
+        "sha256": "d7fbe0d60ea71273f68bd744408059491fbc7f85b6254882d17783d7762bf65e",
+        "rows_used": 423
+      }
+    ],
+    "train_years": [
+      2014,
+      2022
+    ],
+    "test_years": [
+      2023,
+      2024
+    ],
+    "seed": 20261111,
+    "notes": "Fitted on 2014-2022, evaluated on 2023-2024 (44 test county-years in the model universe, all included). theta_lo 0.2 qualifying events: 34 in training (exclude_low_coverage), 35 (include_low_coverage), 19 in the test years. Frequency models: Poisson and negative-binomial (NB2) GLMs with a month-of-year effect (one annual harmonic, sin and cos of month) and state effects, and the county's historical mean rate per county-month. Primary variant (exclude_low_coverage): nb_glm: deviance 130.233, log score 0.158, poisson_glm: deviance 130.216, log score 0.158, historical_mean: deviance None, log score None. beats_baselines = False. With thin early years (include_low_coverage): nb_glm: deviance 133.844, log score 0.1614, poisson_glm: deviance 133.837, log score 0.1614, historical_mean: deviance None, log score None. beats_baselines = False. The NB dispersion alpha is estimated at 0.000080, so the NB model collapses to the Poisson model: the data shows no overdispersion at this event count and the NB adds nothing over the Poisson baseline. Illinois is Cook County only and Cook has no theta_lo event in training, so the Illinois coefficient diverges (-19.11 on the log scale) and the Hessian could not be inverted; predictions for Cook are effectively zero. historical_mean: deviance or log score is null because the model predicts 0 events for a county (no training events) that had test events (Harris: the 2024 derecho and Beryl), which makes the score infinite. beats_baselines is true only if the NB model has lower deviance and lower log score than each baseline whose score is finite. Severity: GPD on the excess of the longest run over 4 h, location fixed at 0. The KS p-value is computed with parameters estimated from the same data, so it is optimistic. P(24 h | event): fitted 0.8147, training 0.8235, test 0.6842. Credibility: B\u00fchlmann-Straub across the 22 universe counties with each state's exposure-weighted rate as the collective; s2 = 0.0199055, a = -0.00012341. Because a is not positive, k is null and every credibility weight is 0: the county histories carry no credible signal beyond their state's rate at this event count. Rates are events per county-month. Pool: simulated members (pool of 1000 as in solvency.json, all with a witness), premiums frozen from pricing_table.json, real 2023-2024 theta_lo events in the three demo counties; each member is affected with probability equal to the event's mean share (seed 20261112). Members and their losses are simulated. R2 cost, not priced (CONTRACTS 1.7): if every member had no witness, R2 would pay 50% of the schedule on theta_hi events: 2023: 0 cents on 0 theta_hi events; 2024: 0 cents on 0 theta_hi events. Estimated R2 multiplier (training years, pooled universe): a no-witness member's expected payout is 0.256 times a witness member's (theta_hi rate 0.0556 vs theta_lo rate 0.2361 events per county-year; prob affected 0.3966). Hurricane Beryl (Harris, July 2024) is in the test years; the feed is missing its onset (data_quality.json storm_windows), so its event starts later than the storm did. The models never saw 2023-2024."
+  }
+}

@@ -30,6 +30,11 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("db: open %s: %w", path, err)
 	}
+	// One connection: SQLite allows one writer, and a deferred transaction
+	// that reads and then writes can fail with SQLITE_BUSY when another
+	// connection writes in between. Serialising in the pool avoids that.
+	// Callers must not hold a transaction while waiting on another query.
+	d.SetMaxOpenConns(1)
 	pctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := d.PingContext(pctx); err != nil {

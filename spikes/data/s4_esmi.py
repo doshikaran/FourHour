@@ -1,21 +1,16 @@
-"""Spike S4: ESMI (Prayas, Harvard Dataverse doi:10.7910/DVN/CLLZZM) structure and premises
-per district.
+"""Spike S4: ESMI (Prayas, Harvard Dataverse doi:10.7910/DVN/CLLZZM) structure, date formats,
+monitored premises per district, and district eligibility for a district index.
 
 Run from the repo root:   ml/.venv/bin/python spikes/data/s4_esmi.py
 
-The Dataverse files are behind a guestbook (a short form in the browser), so this script
-does not download them. A person downloads them from
-    https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/CLLZZM
-and puts every file, unrenamed, in ml/data/raw/esmi/. The script then prints each file's
-structure, the time span, monitored premises per district, and which districts pass the
-proposed cut-off.
+The Dataverse files sit behind a guestbook form, so a person downloads them and puts them,
+unrenamed, in ml/data/raw/esmi/. Exit codes: 0 pass, 1 no district passes the chosen
+cut-off, 2 files missing, 3 the data contradicts an expected format or no rows survive.
 
-Proposed cut-off (a proposal for the lead, not a result): a district can carry a district
-index if its median number of monitors reporting per day is at least MIN_MEDIAN_ACTIVE in
-BOTH halves of the period (the study fits on the first half and scores on the second,
-SPEC.md section 6). With n monitors the index moves in steps of 1/n; at 10 one premises is
-10% of the index, which is about the coarsest step that can still separate theta_lo from
-theta_hi.
+Eligibility: a district passes at cut-off c if, in each half of the study period, it has at
+least MIN_HOURS hours in which c or more of its monitors report concurrently (a monitor
+reports in an hour when its file has a row for that hour). The study fits thresholds on the
+first half and scores on the second (SPEC.md section 6), so both halves need data.
 """
 
 from __future__ import annotations
@@ -28,78 +23,68 @@ sys.path.insert(0, str(ML_DIR))
 
 import pandas as pd  # noqa: E402
 
-from fourhour_ml.config import RAW_DIR  # noqa: E402
-from fourhour_ml.esmi import (  # noqa: E402
-    daily_active_per_district,
-    district_eligibility,
-    premises_per_district,
-    read_header,
-    read_location_days,
-    read_locations,
-)
+from fourhour_ml import esmi  # noqa: E402
 
-ESMI_DIR = RAW_DIR / "esmi"
-DATASET_URL = "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/CLLZZM"
-MIN_MEDIAN_ACTIVE = 10  # PROPOSED cut-off, see module docstring
+CUTOFFS = (10, 8, 5)
+CHOSEN_CUTOFF = esmi.CHOSEN_CUTOFF
+MIN_HOURS = esmi.MIN_USABLE_HOURS
 
 
 def main() -> int:
-    files = sorted(p for p in ESMI_DIR.glob("*") if p.suffix.lower() in (".tab", ".tsv", ".csv"))
-    loc_files = [p for p in files if "location" in p.name.lower()]
-    volt_files = [p for p in files if "voltage" in p.name.lower()]
-    if not loc_files or not volt_files:
-        print("S4 NOT RUN: ESMI files are missing.")
-        print(f"Download them in a browser from {DATASET_URL}")
-        print("(the site asks for a guestbook form before downloading) and put them, unrenamed, in")
-        print(f"  {ESMI_DIR}")
+    missing = [vf.name for vf in esmi.VOLTAGE_FILES if not (esmi.ESMI_DIR / vf.name).exists()]
+    if not (esmi.ESMI_DIR / esmi.LOCATION_FILE).exists() or missing:
+        print(f"S4 NOT RUN: ESMI files are missing from {esmi.ESMI_DIR}: {missing or [esmi.LOCATION_FILE]}")
+        print(f"Download them in a browser from {esmi.DATASET_URL} (guestbook form) and put them there, unrenamed.")
         return 2
+    try:
+        locations = esmi.read_locations()
+        act, stats = esmi.active_hours()
+    except esmi.ESMIError as e:
+        print(f"S4 FAIL: {e}")
+        return 3
 
     print("=" * 100)
-    print("Files and structure")
+    print("Voltage files: date format confirmed from rows where one number is above 12")
     print("=" * 100)
-    for p in files:
-        h = read_header(p)
-        print(f"  {p.name:50s} {p.stat().st_size:>12,d} bytes  {len(h)} columns: {h[:4]} ... {h[-1]}")
+    for s in stats:
+        print(
+            f"  {s['file']:48s} {s['format']:9s} rows {s['rows']:>9,d}  first>12 {s['first_above_12']:>8,d}  "
+            f"second>12 {s['second_above_12']:>8,d}  unparseable {s['unparseable_cells']} {s['unparseable_values']}  "
+            f"bad hour rows {s['bad_hour_rows']}  duplicate keys {s['duplicate_keys']}  "
+            + ("USED" if s["used"] else f"NOT USED: {s['reason']}")
+        )
+    if act.empty:
+        print("S4 FAIL: no rows survived parsing in the used files. Check the date formats above.")
+        return 3
 
-    locations = read_locations(loc_files[0])
-    print(f"\nLocation file: {len(locations)} rows, {locations['Location name'].nunique()} distinct locations")
-    for c in ("State", "Category", "Connection Type"):
-        print(f"  {c}: {locations[c].value_counts(dropna=False).to_dict()}")
+    print("\nNo-supply rule (About the initiative.pdf): a 0 V reading is a power outage; missing data is unavailable, not an interruption.")
+    print(f"\nLocation file: {len(locations)} locations, {locations['District'].nunique()} districts after normalising names.")
+    unknown = sorted(set(act["loc"]) - set(locations["Location name"]))
+    print(f"Locations in used voltage files: {act['loc'].nunique()}; not in the location file: {len(unknown)} {unknown[:5]}")
+    lo, hi = act["t"].min(), act["t"].max()
+    split = esmi.split_time(act)
+    print(f"Study period with data: {lo} -> {hi}; halves split at {split}")
 
-    days = []
-    for p in volt_files:
-        d = read_location_days(p)
-        bad = d["Date"].isna().sum()
-        print(f"  {p.name}: {len(d):,d} location-days, {d['Location name'].nunique()} locations, "
-              f"{d['Date'].min()} -> {d['Date'].max()}, unparsed dates {bad} (sample raw: {d['Date_raw'].head(3).tolist()})")
-        days.append(d)
-    days_all = pd.concat(days, ignore_index=True)
-    unparsed = int(days_all["Date"].isna().sum())
-    days_all = days_all.dropna(subset=["Date"]).drop_duplicates(["Location name", "Date"])
-    unknown = sorted(set(days_all["Location name"]) - set(locations["Location name"]))
+    per = locations.groupby(["State", "District"]).size().rename("premises").sort_values(ascending=False)
+    print(f"\nDistricts with 10 or more premises in the location file: {(per >= 10).sum()}")
+    conc = esmi.concurrency(act, locations)
+    peak = conc.groupby(["State", "District"])["active"].max()
+    print(f"Districts by most monitors ever reporting in one hour: >=10: {(peak >= 10).sum()}, >=8: {(peak >= 8).sum()}, >=5: {(peak >= 5).sum()}")
 
-    lo, hi = days_all["Date"].min(), days_all["Date"].max()
-    split = lo + (hi - lo) / 2
-    print(f"\nTime span with data: {lo.date()} -> {hi.date()}; first/second half split at {split.date()}")
-    print(f"Unparsed dates dropped: {unparsed}. Locations in voltage data but not in the location file: {len(unknown)}")
-
-    print("\n" + "=" * 100)
-    print("Premises per district (location file)")
-    print("=" * 100)
-    print(premises_per_district(locations).to_string())
-
-    daily = daily_active_per_district(days_all, locations)
-    elig = district_eligibility(daily, split, MIN_MEDIAN_ACTIVE)
-    print("\n" + "=" * 100)
-    print(f"Median monitors reporting per day, by half. PROPOSED cut-off: >= {MIN_MEDIAN_ACTIVE} in both halves")
-    print("=" * 100)
-    print(elig.to_string())
-    passing = elig[elig["passes"]]
-    print(f"\n{len(passing)} district(s) pass the proposed cut-off: "
-          + ", ".join(f"{r.District} ({r.State})" for r in passing.itertuples()))
+    results = {}
+    for c in CUTOFFS:
+        el = esmi.eligibility(conc, split, c, MIN_HOURS)
+        results[c] = el
+        p = el[el["passes"]]
+        print(f"\nCut-off {c} concurrently reporting monitors, at least {MIN_HOURS} such hours in each half: {len(p)} district(s) pass")
+        print(el.head(15).to_string())
+    chosen = results[CHOSEN_CUTOFF]
+    passing = chosen[chosen["passes"]]
+    print(f"\nChosen cut-off: {CHOSEN_CUTOFF} ({esmi.CUTOFF_REASON})")
     if passing.empty:
-        print("S4 FAIL: no district has enough premises at this cut-off. Tell the lead; do not substitute data.")
+        print("S4 FAIL: no district passes the chosen cut-off. Tell the lead; do not substitute data.")
         return 1
+    print(f"{len(passing)} district(s) pass: " + ", ".join(f"{r.District} ({r.State})" for r in passing.itertuples()))
     print("S4 PASS")
     return 0
 

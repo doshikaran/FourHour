@@ -80,7 +80,7 @@ def main() -> int:
     banner(
         f"Harris County (48201) {YEAR}: events of 4 h or more\n"
         f"THRESHOLD = {PLACEHOLDER_THRESHOLD} share of customers out. THIS IS A PLACEHOLDER, NOT A RESULT.\n"
-        f"Gap bridging {GAP_BRIDGE_MINUTES} min (SPEC.md 5.1). Test-year data: not for fitting or threshold choice."
+        f"Gap bridging {GAP_BRIDGE_MINUTES} min, dropout rule and 72 h hours clause (CONTRACTS 1.7 section 3). Test-year data: not for fitting or threshold choice."
     )
     ev = reconstruct_events(h, n_cust, PLACEHOLDER_THRESHOLD, min_hours=4.0, series_start=y0, series_end=y1)
     gaps = missing_runs(h, y0, y1)
@@ -89,7 +89,7 @@ def main() -> int:
             peak_customers_out=ev["peak_customers_out"].map("{:,.0f}".format),
             peak_share=ev["peak_share"].round(4),
             mean_share=ev["mean_share"].round(4),
-            duration_hours=ev["duration_hours"].round(2),
+            longest_run_hours=ev["longest_run_hours"].round(2),
         )
         print(out.to_string() if len(out) else "  (no events)")
     print(f"\n  {len(ev)} events of 4 h or more at the PLACEHOLDER threshold {PLACEHOLDER_THRESHOLD}.")

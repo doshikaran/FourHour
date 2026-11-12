@@ -1,0 +1,233 @@
+{
+  "fixture_format": "fourhour-witness-fixture/1",
+  "generated_by": "frontend/spikes/s5-phone-witness.html",
+  "generated_at": "2026-11-11T18:20:11Z",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+  "page_origin": "http://localhost:8000",
+  "public_key_jwk": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "DsJVcBvOKOiR4lK1UBQNX3qg4DboXRec1iS0DBlGpg4",
+    "y": "j_X-OsDNWXMt08kthVZXqs9LoTnzERtb7NetyMeWGfs"
+  },
+  "genesis_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entries": [
+    {
+      "seq": 1,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "heartbeat",
+      "charging": true,
+      "battery_level": 0.29,
+      "online": true,
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "e3e0696d030a3c6386bc6768a02dd0fb257b387d3485af49ee295d8713fdcf7d",
+      "sig": "O4T7k4q2nERWsKN7OvMTbhsPEfsTKSrKRWMeS2gD_KsYhUBwJRJe0YTV6hjRB4p8mq8s-U3hJfI0MfQuGztoTg"
+    },
+    {
+      "seq": 2,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "power_lost",
+      "charging": false,
+      "battery_level": 0.5,
+      "online": true,
+      "prev_hash": "e3e0696d030a3c6386bc6768a02dd0fb257b387d3485af49ee295d8713fdcf7d",
+      "hash": "9814e5d87d39f072f18dbbbfd82c8c07d65ae03dd97cb313268ecbc8672873a5",
+      "sig": "EbEwVic9W7Fk1Yak4eYpjfodCyLTKAtNUAq1vIkzIAHFT1a2aXlc1uQ2d73zmfs0t_LBKIWbap4UA8o0-L9WPA"
+    },
+    {
+      "seq": 3,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "power_restored",
+      "charging": true,
+      "battery_level": 0.83,
+      "online": true,
+      "prev_hash": "9814e5d87d39f072f18dbbbfd82c8c07d65ae03dd97cb313268ecbc8672873a5",
+      "hash": "8f9d6ab960dbd2b4a5ae9851e9ec82e853eda9a0849c88018fd031a6b63aa8f2",
+      "sig": "XRa-OhPMxEx-GFWg3c7ASx9EbkSEbZKabbd5VGIKfit1db1VxogMIJST5Hl6eW-K-7qRDqAKwYg4ulV0N6z7uw"
+    },
+    {
+      "seq": 4,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "attest_lost",
+      "charging": false,
+      "battery_level": null,
+      "online": true,
+      "prev_hash": "8f9d6ab960dbd2b4a5ae9851e9ec82e853eda9a0849c88018fd031a6b63aa8f2",
+      "hash": "245edf3cd77575a1ffa1e44ea167f779d9381bbcb338fd7b98b2dfdf3a1e0494",
+      "sig": "B8eU5lqbMYphC3NXSae18axqZtx7WYXZq-m6XjCo6NCz-koJ9thkGjeo6LNTtJxD9IIvrtL9Tn1K2UQN1K0SLA"
+    },
+    {
+      "seq": 5,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "attest_restored",
+      "charging": true,
+      "battery_level": 1,
+      "online": true,
+      "prev_hash": "245edf3cd77575a1ffa1e44ea167f779d9381bbcb338fd7b98b2dfdf3a1e0494",
+      "hash": "9a051e00cba189e130ea5b22b7d61a01093355e03bb943faae5558b7fbe4bd25",
+      "sig": "ZzHvHVelmNoIF2ZDETxPCiTRflPPIS3XB5O-A8AZ_t6nPSHTYaK7M0f5YBpl94Lu1UFekjlbdy-xP0c0-8fOSw"
+    },
+    {
+      "seq": 6,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "heartbeat",
+      "charging": true,
+      "battery_level": 0.00001,
+      "online": true,
+      "prev_hash": "9a051e00cba189e130ea5b22b7d61a01093355e03bb943faae5558b7fbe4bd25",
+      "hash": "fc179b4797e60143a205596c1f72ed3aed70e70d2d3f20d1a8303b095336fd7b",
+      "sig": "A2E6bgyARhUTOmHrrHCuDIk0ADENHA0Igkx3B5PLB3h3k6TjLeFKxksEjDNSnfbTam-wSj9Ht73D2nXkN2ibZQ"
+    },
+    {
+      "seq": 7,
+      "device_time": "2026-11-11T18:18:15Z",
+      "kind": "heartbeat",
+      "charging": true,
+      "battery_level": 0.30000000000000004,
+      "online": true,
+      "prev_hash": "fc179b4797e60143a205596c1f72ed3aed70e70d2d3f20d1a8303b095336fd7b",
+      "hash": "143163330d6e9761be13ccd832b0578ef37a8cdb0d10b0fab1cd22dbdb65ea48",
+      "sig": "W64FccW9gqz7cxDNF6G3Io7gPcAtbJYOSethdZtJV3VGO3RUwQ5qpvv6QGq-dAP4j9iRuHmzJnnG_uuzshKMqA"
+    }
+  ],
+  "hash_inputs": [
+    "{\"seq\":1,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"heartbeat\",\"charging\":true,\"battery_level\":0.29,\"online\":true,\"prev_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\"}",
+    "{\"seq\":2,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"power_lost\",\"charging\":false,\"battery_level\":0.5,\"online\":true,\"prev_hash\":\"e3e0696d030a3c6386bc6768a02dd0fb257b387d3485af49ee295d8713fdcf7d\"}",
+    "{\"seq\":3,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"power_restored\",\"charging\":true,\"battery_level\":0.83,\"online\":true,\"prev_hash\":\"9814e5d87d39f072f18dbbbfd82c8c07d65ae03dd97cb313268ecbc8672873a5\"}",
+    "{\"seq\":4,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"attest_lost\",\"charging\":false,\"battery_level\":null,\"online\":true,\"prev_hash\":\"8f9d6ab960dbd2b4a5ae9851e9ec82e853eda9a0849c88018fd031a6b63aa8f2\"}",
+    "{\"seq\":5,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"attest_restored\",\"charging\":true,\"battery_level\":1,\"online\":true,\"prev_hash\":\"245edf3cd77575a1ffa1e44ea167f779d9381bbcb338fd7b98b2dfdf3a1e0494\"}",
+    "{\"seq\":6,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"heartbeat\",\"charging\":true,\"battery_level\":0.00001,\"online\":true,\"prev_hash\":\"9a051e00cba189e130ea5b22b7d61a01093355e03bb943faae5558b7fbe4bd25\"}",
+    "{\"seq\":7,\"device_time\":\"2026-11-11T18:18:15Z\",\"kind\":\"heartbeat\",\"charging\":true,\"battery_level\":0.30000000000000004,\"online\":true,\"prev_hash\":\"fc179b4797e60143a205596c1f72ed3aed70e70d2d3f20d1a8303b095336fd7b\"}"
+  ],
+  "entry_notes": [
+    "device_time, charging, battery_level and online are real readings",
+    "kind, charging and battery_level are test values; device_time and online are real",
+    "kind, charging and battery_level are test values; device_time and online are real",
+    "kind, charging and battery_level are test values; device_time and online are real",
+    "kind, charging and battery_level are test values; device_time and online are real",
+    "battery_level 0.00001 tests number formatting (JavaScript writes 0.00001)",
+    "battery_level 0.1+0.2 tests number formatting (JavaScript writes 0.30000000000000004)"
+  ],
+  "test_signature": {
+    "message": "fourhour-s5-test 2026-11-11T18:18:15Z",
+    "sig": "nawjNd3e8-nJXkmflgwcdmSMs3HK17cb6pAHSWHrfVHBr1LY6G82tHyY2efHqjFsyRSuQpZnBp5N0m97Uus4lQ",
+    "sig_bytes": 64,
+    "verified": true,
+    "tampered_verified": false
+  },
+  "checks": {
+    "secure_context": {
+      "status": "PASS",
+      "detail": "Served from http://localhost:8000"
+    },
+    "battery_api": {
+      "status": "PASS",
+      "detail": "Present. charging=true, level=0.29."
+    },
+    "battery_change_seen": {
+      "status": "PASS",
+      "detail": "2 charger change(s) seen, both unplug and replug."
+    },
+    "webcrypto": {
+      "status": "PASS",
+      "detail": "key pair generated, private key extractable=false; private key export refused (good); public JWK exported; signature 64 bytes, verifies=true, tampered message verifies=false."
+    },
+    "hash_chain": {
+      "status": "PASS",
+      "detail": "7 chained, signed entries built and verified in this browser. Entry 1 shown below."
+    },
+    "storage_write_read": {
+      "status": "PASS",
+      "detail": "Wrote and read back {\"written_at\":\"2026-11-11T18:18:15.085Z\",\"loads\":2}"
+    },
+    "storage_persisted": {
+      "status": "PASS",
+      "detail": "Found the value from an earlier load: {\"written_at\":\"2026-11-11T18:18:02.330Z\",\"loads\":1}"
+    },
+    "online_events": {
+      "status": "PASS",
+      "detail": "navigator.onLine is true."
+    },
+    "online_change_seen": {
+      "status": "PENDING",
+      "detail": "Turn airplane mode on, then off."
+    },
+    "wake_lock": {
+      "status": "PASS",
+      "detail": "Screen wake lock acquired; the screen should stay on while this page is visible."
+    }
+  },
+  "battery_log": [
+    {
+      "device_time": "2026-11-11T18:18:15.093Z",
+      "event": "initial",
+      "charging": true,
+      "level": 0.29
+    },
+    {
+      "device_time": "2026-11-11T18:18:21.551Z",
+      "event": "you_tapped_unplugging",
+      "charging": null,
+      "level": null
+    },
+    {
+      "device_time": "2026-11-11T18:18:24.613Z",
+      "event": "chargingchange",
+      "charging": false,
+      "level": 0.29,
+      "seconds_since_mark": 3.062
+    },
+    {
+      "device_time": "2026-11-11T18:18:33.883Z",
+      "event": "you_tapped_plugging_in",
+      "charging": null,
+      "level": null
+    },
+    {
+      "device_time": "2026-11-11T18:18:36.632Z",
+      "event": "chargingchange",
+      "charging": true,
+      "level": 0.29,
+      "seconds_since_mark": 2.749
+    },
+    {
+      "device_time": "2026-11-11T18:20:09.851Z",
+      "event": "levelchange",
+      "charging": true,
+      "level": 0.3
+    }
+  ],
+  "network_log": [
+    {
+      "device_time": "2026-11-11T18:18:15.085Z",
+      "event": "initial",
+      "online": true
+    }
+  ],
+  "visibility_log": [
+    {
+      "device_time": "2026-11-11T18:18:27.803Z",
+      "state": "hidden"
+    },
+    {
+      "device_time": "2026-11-11T18:18:32.240Z",
+      "state": "visible"
+    },
+    {
+      "device_time": "2026-11-11T18:18:49.585Z",
+      "state": "hidden"
+    },
+    {
+      "device_time": "2026-11-11T18:19:06.458Z",
+      "state": "visible"
+    },
+    {
+      "device_time": "2026-11-11T18:19:09.556Z",
+      "state": "hidden"
+    },
+    {
+      "device_time": "2026-11-11T18:20:09.840Z",
+      "state": "visible"
+    }
+  ]
+}

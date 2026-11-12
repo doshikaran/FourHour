@@ -1,11 +1,8 @@
 /**
- * Types for every request, response, stream event and artifact in CONTRACTS.md v1.1,
- * sections 3, 4, 5, 6 and 8. Field names match the contract exactly.
+ * Types for every request, response, stream event and artifact in CONTRACTS.md,
+ * sections 3, 4, 5, 6 and 8 (8.1 pins the artifact shapes). Field names match the contract exactly.
  *
- * Version: CONTRACTS.md 1.2.
- *
- * Where the contract still leaves a shape open (section 8, note under the table), the type is
- * `JsonValue` marked `TODO(contract)`. Do not narrow those by guessing.
+ * Version: CONTRACTS.md 1.7.
  *
  * Nullability follows section 3: a field that only gets a value later (PayPal IDs, end times,
  * cancelled_at, confirmed_at, confirmed_via, sim_time, reject_reason) is `| null`; every other
@@ -54,8 +51,13 @@ export interface Member {
   created_at: IsoTime;
 }
 
-export type CoverCents = 5000 | 15000 | 30000;
-export const COVER_OPTIONS_CENTS: readonly CoverCents[] = [5000, 15000, 30000];
+/** Cover a member can choose (quotes and new policies never accept the test cover). */
+export type QuotableCoverCents = 5000 | 15000 | 30000;
+export const COVER_OPTIONS_CENTS: readonly QuotableCoverCents[] = [5000, 15000, 30000];
+/** Section 3: 100 cents is the seeded sandbox test cover (model_version "test-cover"). */
+export const TEST_COVER_CENTS = 100;
+export const TEST_COVER_MODEL_VERSION = 'test-cover';
+export type CoverCents = QuotableCoverCents | typeof TEST_COVER_CENTS;
 
 export type PolicyStatus = 'pending_vault' | 'active' | 'cancelled';
 
@@ -165,7 +167,8 @@ export type ClaimDecision = 'paid' | 'declined' | 'review';
 export interface Claim {
   id: ClaimId;
   policy_id: PolicyId;
-  outage_event_id: OutageEventId;
+  /** Null for R5, which has no outage event (CONTRACTS 1.4). */
+  outage_event_id: OutageEventId | null;
   tier: ClaimTier;
   rule: ClaimRule;
   decision: ClaimDecision;
@@ -174,6 +177,8 @@ export interface Claim {
   reason: string;
   decided_at: IsoTime;
   sim_time: IsoTime | null;
+  /** R5 only: the power_lost / attest_lost entry that started the witness interval. Null otherwise (1.4). */
+  witness_entry_id: WitnessEntryId | null;
 }
 
 export type PayoutStatus = 'created' | 'pending' | 'success' | 'failed' | 'unclaimed';
@@ -252,7 +257,8 @@ export interface County {
   fips: Fips;
   name: string;
   state: string;
-  data_coverage: number;
+  /** Null until the data_quality.json row shape is pinned (CONTRACTS 1.4). */
+  data_coverage: number | null;
 }
 
 export interface CountiesResponse {
@@ -261,7 +267,7 @@ export interface CountiesResponse {
 
 export interface QuoteRequest {
   fips: Fips;
-  cover_cents: CoverCents;
+  cover_cents: QuotableCoverCents;
 }
 
 export interface QuoteBreakdown {
@@ -295,7 +301,7 @@ export type CreateMemberResponse = Member;
 export interface CreatePolicyRequest {
   member_id: MemberId;
   fips: Fips;
-  cover_cents: CoverCents;
+  cover_cents: QuotableCoverCents;
 }
 
 export interface CreatePolicyResponse {
@@ -371,6 +377,10 @@ export interface ScenarioSummary {
   description: string;
   /** True for fixture scenarios named `fixture-*`; the UI labels them. */
   is_fixture: boolean;
+  /** The scenario file's `source`, unchanged (CONTRACTS 1.4, shape 8.1). */
+  source: ScenarioSource;
+  /** The scenario file's provenance, unchanged (CONTRACTS 1.4). */
+  provenance: Provenance;
 }
 
 export interface ScenariosResponse {
@@ -409,18 +419,22 @@ export interface ClaimsResponse {
   claims: ClaimListItem[];
 }
 
-/** One point of a county index series (same shape as a scenario series point, section 8). */
+/**
+ * One point of a county index series (same shape as a scenario series point, section 8).
+ * A missing 15-minute interval has customers_out and share null (CONTRACTS 1.3). Draw a gap.
+ */
 export interface SeriesPoint {
   t: IsoTime;
-  customers_out: number;
-  share: number;
+  customers_out: number | null;
+  share: number | null;
 }
 
 /** GET /api/claims/{id}. The payout is inside `claim`. */
 export interface ClaimDetailResponse {
   claim: ClaimListItem;
-  outage_event: OutageEvent;
-  /** Covers the event window. */
+  /** Null for R5, which has no outage event (CONTRACTS 1.4). */
+  outage_event: OutageEvent | null;
+  /** Covers the event window, or for R5 the witness interval. May be empty if there are no readings. */
   index_series: SeriesPoint[];
   /** The entries the rule engine used. */
   witness_entries: WitnessEntryRow[];
@@ -431,24 +445,54 @@ export interface LedgerResponse {
   entries: LedgerEntry[];
 }
 
-// ---------- section 8: artifacts (served unchanged by /api/analytics/*) ----------
+// ---------- section 8 / 8.1: artifacts (served unchanged by /api/analytics/*) ----------
+// Any value may be null only with its reason in provenance.notes (8.1), so numbers are `| null`.
 
-/** TODO(contract): the shape of one grid row ("every candidate pair with its expected wrong and missed payouts"). */
-export type TodoTriggerGridRow = JsonValue;
+type N = number | null;
+
+export interface TriggerGridRow {
+  theta_lo: number;
+  theta_hi: number;
+  /** Per member-year, in units of one full scheduled payout, training county-years only. */
+  expected_wrong_payouts: N;
+  expected_missed_payouts: N;
+  /** wrong + missed; the chosen pair is its minimum. */
+  objective: N;
+  chosen: boolean;
+}
+
+/** At the grid edge the UI says so and never calls the value an optimum (8.1, 1.7). */
+export type ThetaHiStatus = 'interior_optimum' | 'grid_edge_no_interior_optimum';
+
+/** The chosen pair for one combination of the product assumptions (8.1, 1.7). */
+export interface TriggerSensitivityRow {
+  witness_share: number;
+  false_confirmation_rate: number;
+  theta_lo: N;
+  theta_hi: N;
+  theta_hi_status: ThetaHiStatus;
+  objective: N;
+}
 
 export interface TriggerParamsArtifact {
-  theta_hi: number | null;
-  theta_lo: number | null;
-  gap_bridge_minutes: number | null;
-  grid: TodoTriggerGridRow[];
+  theta_hi: N;
+  theta_lo: N;
+  gap_bridge_minutes: N;
+  /** Hours clause (SPEC section 4), 72. */
+  event_merge_hours: N;
+  /** Partial-feed dropout rule (section 3, 1.6): a fall to at most this fraction counts as missing. */
+  dropout_max_fraction: N;
+  theta_hi_status: ThetaHiStatus;
+  sensitivity: TriggerSensitivityRow[];
+  grid: TriggerGridRow[];
   provenance: Provenance;
 }
 
 export interface PricingCounty {
-  expected_events_per_year: number | null;
-  prob_24h_given_event: number | null;
-  prob_premises_affected: number | null;
-  credibility_weight: number | null;
+  expected_events_per_year: N;
+  prob_24h_given_event: N;
+  prob_premises_affected: N;
+  credibility_weight: N;
 }
 
 export interface PricingTableArtifact {
@@ -456,7 +500,7 @@ export interface PricingTableArtifact {
   /** Keyed by FIPS. */
   counties: Record<Fips, PricingCounty>;
   rates: {
-    risk_margin_rate: number | null;
+    risk_margin_rate: N;
     expense_load_cents: Cents | null;
   };
   payout_schedule: {
@@ -466,48 +510,151 @@ export interface PricingTableArtifact {
   provenance: Provenance;
 }
 
-/** TODO(contract): inner shapes of frequency, severity, credibility and pool still open (section 8 note). */
+export type FrequencyModel = 'nb_glm' | 'poisson_glm' | 'historical_mean';
+
+export interface CalibrationBin {
+  bin: number;
+  n: number;
+  predicted_mean: N;
+  realised_mean: N;
+}
+
+export interface FrequencyVariant {
+  county_years_fitted: number;
+  per_county_year: { fips: Fips; year: number; realised: N; nb_glm: N; poisson_glm: N; historical_mean: N }[];
+  /** Out-of-sample Poisson deviance summed over test county-months. */
+  deviance: Record<FrequencyModel, N>;
+  /** Mean negative log predictive likelihood per test county-month (lower is better). */
+  log_score: Record<FrequencyModel, N>;
+  calibration: Record<FrequencyModel, CalibrationBin[]>;
+  beats_baselines: boolean | null;
+}
+
+export type FrequencyVariantName = 'exclude_low_coverage' | 'include_low_coverage';
+
 export interface BacktestArtifact {
-  frequency: JsonValue;
-  severity: JsonValue;
-  credibility: JsonValue;
-  pool: JsonValue;
+  frequency: {
+    threshold: string;
+    theta: N;
+    unit: string;
+    primary_variant: FrequencyVariantName;
+    variants: Record<FrequencyVariantName, FrequencyVariant | null>;
+  } | null;
+  severity: {
+    threshold_hours: number;
+    n_events_train: N;
+    n_events_test: N;
+    gpd: { shape: N; scale: N; location_hours: N };
+    ks_statistic: N;
+    ks_pvalue: N;
+    prob_24h_given_event: { fitted: N; empirical_train: N; empirical_test: N };
+    qq: { empirical_hours: number; model_hours: number }[];
+  } | null;
+  credibility: {
+    method: string;
+    k: N;
+    counties: Record<Fips, { state: string; county_rate: N; state_rate: N; exposure_months: N; weight: N; blended_rate: N }>;
+  } | null;
+  pool: {
+    members: number;
+    years: {
+      year: number;
+      premiums_cents: Cents | null;
+      payouts_cents: Cents | null;
+      loss_ratio: N;
+      events: N;
+      events_by_county: Record<Fips, number>;
+      claims_paid: N;
+    }[];
+  } | null;
   provenance: Provenance;
 }
 
 export interface SolvencyArtifact {
   members: number;
   simulations: number;
-  ruin_probability: number | null;
+  ruin_probability: N;
   capital_1_in_200_cents: Cents | null;
   stop_loss: {
     attachment_cents: Cents | null;
     limit_cents: Cents | null;
     price_cents: Cents | null;
   };
-  /** TODO(contract): shape still open (section 8 note). */
-  annual_loss_quantiles: JsonValue;
+  annual_loss_quantiles: { q: number; loss_cents: Cents | null }[];
   provenance: Provenance;
 }
 
 export type BasisRiskScheme = 'index_only' | 'rules_perfect_witness' | 'rules_10pct_missing' | 'rules_30pct_missing';
 
-/**
- * TODO(contract): where the four schemes sit, their count keys, and the types of districts_used,
- * fit_period and score_period are still open (section 8 note). Caveats are in provenance.notes.
- */
-export interface TodoBasisRiskArtifact {
-  [key: string]: JsonValue | Provenance;
+export interface BasisRiskSchemeResult {
+  premises_events: N;
+  paid: N;
+  missed: N;
+  wrong: N;
+  /** missed / premises_events */
+  missed_rate: N;
+  /** wrong / paid */
+  wrong_rate: N;
+}
+
+/** Caveats (perfect witness, upper bound) are in provenance.notes. */
+export interface BasisRiskArtifact {
+  schemes: Record<BasisRiskScheme, BasisRiskSchemeResult | null>;
+  districts_used: { state: string; district: string; median_active_monitors: N }[];
+  min_active_monitors: N;
+  theta_hi: N;
+  theta_lo: N;
+  fit_period: { start: string; end: string };
+  score_period: { start: string; end: string };
   provenance: Provenance;
 }
 
-/** TODO(contract): the per county-year row key is still open (section 8 note). */
-export interface TodoDataQualityArtifact {
-  [key: string]: JsonValue | Provenance;
+export interface DataQualityRow {
+  fips: Fips;
+  county: string;
+  state: string;
+  year: number;
+  county_customers: N;
+  expected_intervals: N;
+  intervals_present: N;
+  coverage_share: N;
+  zero_rows: N;
+  max_customers_out: N;
+  intervals_over_county_customers: N;
+  in_model_universe: boolean;
+  excluded_from_fitting: boolean;
+  exclusion_reason: string | null;
+}
+
+export interface DataQualityArtifact {
+  coverage_floor: N;
+  rows: DataQualityRow[];
+  year_summary: { year: number; rows: N; zero_rows: N; null_rows: N; off_grid_rows: N; first_t: IsoTime | null; last_t: IsoTime | null }[];
+  gap_bridge_evidence: { events_examined: N; gaps: { minutes: number; count: number }[]; share_of_gaps_within_bridge: N };
+  storm_windows: {
+    id: string;
+    fips: Fips;
+    start: IsoTime;
+    end: IsoTime;
+    expected_intervals: N;
+    intervals_present: N;
+    zero_rows: N;
+    longest_missing_minutes: N;
+    notes: string;
+  }[];
+  timestamp_check: { assumed: string; storm: string; first_sharp_rise_utc: IsoTime | null; consistent_with_utc: boolean | null; evidence: string };
+  county_coverage: Record<Fips, { data_coverage: N }>;
   provenance: Provenance;
 }
 
-/** TODO(contract): the type of `source`, and how a missing 15-minute row appears in `series`, are still open. */
+/** Scenario `source` (8.1). */
+export interface ScenarioSource {
+  dataset: string;
+  url: string;
+  file: string;
+  sha256: string;
+}
+
 export interface ScenarioArtifact {
   id: string;
   title: string;
@@ -517,7 +664,7 @@ export interface ScenarioArtifact {
   start: IsoTime;
   end: IsoTime;
   series: SeriesPoint[];
-  source: JsonValue;
+  source: ScenarioSource;
   provenance: Provenance;
 }
 
@@ -527,9 +674,9 @@ export interface AnalyticsArtifacts {
   backtest: BacktestArtifact;
   pricing: PricingTableArtifact;
   solvency: SolvencyArtifact;
-  'basis-risk': TodoBasisRiskArtifact;
+  'basis-risk': BasisRiskArtifact;
   trigger: TriggerParamsArtifact;
-  'data-quality': TodoDataQualityArtifact;
+  'data-quality': DataQualityArtifact;
 }
 
 // ---------- section 5: replay event stream ----------
@@ -538,12 +685,14 @@ export interface StreamEventBase {
   sim_time: IsoTime;
 }
 
+/** share and customers_out are null for a missing 15-minute interval (CONTRACTS 1.3). */
 export interface TickEvent extends StreamEventBase {
-  share: number;
-  customers_out: number;
+  share: number | null;
+  customers_out: number | null;
   fips: Fips;
 }
 
+/** May repeat for the same outage_event_id after an hours-clause merge: that reopens the event (1.4). */
 export interface EventOpenedEvent extends StreamEventBase {
   outage_event_id: OutageEventId;
   threshold: 'lo' | 'hi';
@@ -570,6 +719,15 @@ export interface PayoutEvent extends StreamEventBase {
   payout: Payout;
 }
 
+/**
+ * A provisional event reached 4 hours and merged into an earlier qualifying event by the hours
+ * clause (1.5). Clients drop the provisional event; an event_opened for the target follows.
+ */
+export interface EventMergedEvent extends StreamEventBase {
+  outage_event_id: OutageEventId;
+  into_outage_event_id: OutageEventId;
+}
+
 export interface ReplayEndedEvent extends StreamEventBase {
   replay_id: string;
 }
@@ -594,6 +752,7 @@ export interface ReplayEventMap {
   tick: TickEvent;
   event_opened: EventOpenedEvent;
   event_closed: EventClosedEvent;
+  event_merged: EventMergedEvent;
   witness_entry: WitnessEntryEvent;
   claim_decided: ClaimDecidedEvent;
   payout_sent: PayoutEvent;
@@ -608,6 +767,7 @@ export const REPLAY_EVENT_NAMES: readonly ReplayEventName[] = [
   'tick',
   'event_opened',
   'event_closed',
+  'event_merged',
   'witness_entry',
   'claim_decided',
   'payout_sent',

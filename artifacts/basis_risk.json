@@ -1,0 +1,172 @@
+{
+  "schemes": {
+    "index_only": {
+      "premises_events": 5010,
+      "paid": 2394,
+      "missed": 3526,
+      "wrong": 844,
+      "missed_rate": 0.703792,
+      "wrong_rate": 0.352548
+    },
+    "rules_perfect_witness": {
+      "premises_events": 5010,
+      "paid": 4135,
+      "missed": 297,
+      "wrong": 0,
+      "missed_rate": 0.059281,
+      "wrong_rate": 0.0
+    },
+    "rules_10pct_missing": {
+      "premises_events": 5010,
+      "paid": 3948,
+      "missed": 547,
+      "wrong": 66,
+      "missed_rate": 0.109182,
+      "wrong_rate": 0.016717
+    },
+    "rules_30pct_missing": {
+      "premises_events": 5010,
+      "paid": 3429,
+      "missed": 1177,
+      "wrong": 207,
+      "missed_rate": 0.23493,
+      "wrong_rate": 0.060367
+    }
+  },
+  "districts_used": [
+    {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "median_active_monitors": 16.0
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Sitapur",
+      "median_active_monitors": 11.0
+    },
+    {
+      "state": "Karnataka",
+      "district": "Belgaum",
+      "median_active_monitors": 8.0
+    },
+    {
+      "state": "Maharashtra",
+      "district": "Akola",
+      "median_active_monitors": 10.0
+    },
+    {
+      "state": "Telangana",
+      "district": "Hyderabad",
+      "median_active_monitors": 7.0
+    },
+    {
+      "state": "Karnataka",
+      "district": "Bengaluru Urban",
+      "median_active_monitors": 6.0
+    },
+    {
+      "state": "Bihar",
+      "district": "Saharsa",
+      "median_active_monitors": 6.0
+    },
+    {
+      "state": "Uttar Pradesh",
+      "district": "Kanpur",
+      "median_active_monitors": 6.0
+    }
+  ],
+  "min_active_monitors": 8,
+  "theta_hi": 0.5,
+  "theta_lo": 0.1,
+  "fit_period": {
+    "start": "2014-10-22",
+    "end": "2016-11-24"
+  },
+  "score_period": {
+    "start": "2016-11-25",
+    "end": "2018-12-31"
+  },
+  "provenance": {
+    "generated_at": "2026-11-12T00:56:42Z",
+    "git_commit": "5a552e3-dirty",
+    "code": "ml/fourhour_ml/basis.py, ml/fourhour_ml/esmi.py, ml/fourhour_ml/build.py:build_basis_risk",
+    "data_sources": [
+      {
+        "name": "ESMI location information.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "b24c68d1ed75b8b90397e1a7693ed450742e7c47a4ff91255a4f2607a2247717",
+        "rows_used": 528
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2014.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "11e408f87bb85e698e9d677cb0a6da39dec6a95f735ed1755014220b6f2296ff",
+        "rows_used": 58976
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2015.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "bb41194aa00c538b8c72c5644f831a5116e5fe0baa777d7d7ed94771f241fbf2",
+        "rows_used": 766649
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2016 Jan-June.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "58eb46a336f53bc8c1aaac94794b4a0ccc21a07e28a59e2b0eb5a330e8c38616",
+        "rows_used": 778400
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2016 July-Dec.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "405dfbfe1b9197930317ddf889fb893f7adb8a483eba9467e9a02fbce7090f9d",
+        "rows_used": 874773
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2017 Jan-April.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "c576aec40db1841103109580257f72cdb96167b1f7fd84f4fa5415f57c96a88c",
+        "rows_used": 696856
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2017 May-Aug.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "a2443ee93f559b317a8ca2ac8f76763fbfa4393508dd6aa0ec0a335c94a9d634",
+        "rows_used": 681422
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2017 Sept-Dec.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "0f90731bb37d526630ae7c13ea4e9d8480004cd7bc2f67e96cc9487cf6f76c1f",
+        "rows_used": 632196
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2018 Jan-May.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "b8a40137c7af7b4749d756036340271c668a3310126f000298fab639bd0cbfd8",
+        "rows_used": 882826
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2018 June-Aug.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "db8ba161c10687dcb3be8239bc9ec547627bcf49b88b5e5f340aea8db60a1ac4",
+        "rows_used": 542518
+      },
+      {
+        "name": "ESMI minute-wise voltage data 2018 Sep-Dec.csv",
+        "url": "https://doi.org/10.7910/DVN/CLLZZM",
+        "sha256": "958cac665ae3aa1ee84edc5bbb86fcf0bab589c62ecad863a04432d31218df8f",
+        "rows_used": 687237
+      }
+    ],
+    "train_years": [
+      2014,
+      2022
+    ],
+    "test_years": [
+      2023,
+      2024
+    ],
+    "seed": 20261111,
+    "notes": "Real data: Prayas ESMI minute-wise voltage at individual premises in India (Harvard Dataverse doi:10.7910/DVN/CLLZZM), files 2014-2018. The 2019 files are excluded: ESMI voltage data 2019 Jan-June.csv: 72 #VALUE! dates, 6181 repeated (location, date, hour) keys; ESMI voltage data 2019 July-Dec.csv: 5028 #VALUE! dates, 660463 repeated (location, date, hour) keys; the July-Dec 2019 Hour column holds only 0 and 1. Dates were parsed with an explicit format per file, confirmed from the data (2014-2018 DD-MM-YYYY, 2019 M/D/YYYY). No-supply rule, from 'About the initiative.pdf': a 0 V reading is a power outage; missing data is unavailable, not an interruption. So a monitor that is offline is told apart from no supply. Eligibility (S4): a district is used if, in each half of the period, it has at least 720 hours with 8 or more monitors reporting concurrently. 8 districts, 121 monitors. Cut-off reason: S4 counts: 6 districts pass at 10, 8 at 8, 18 at 5. At 8 monitors one premises moves the index by at most 12.5%; at 5 it moves it by 20% or more, too coarse to separate a lenient from a strong threshold. 8 keeps the index usable while adding two districts over a cut-off of 10. Share of minutes in the study period with the district index defined (8 or more monitors reporting): Saharsa 0.26, Belgaum 0.53, Bengaluru Urban 0.40, Akola 0.73, Pune 0.99, Hyderabad 0.43, Kanpur 0.30, Sitapur 0.53. A district index built from this few monitors (median 6 to 16 reporting) is far noisier than a utility-wide county count in EAGLE-I, where the share is over tens of thousands to millions of customers: one premises moves a district index by 6% to 12.5%. The result shows the mechanism, not the size of basis risk for a US county index. Upper bound: in this study the witness is the premises' own monitor, so it is perfect by construction (rules_perfect_witness has no wrong payments). rules_10pct_missing and rules_30pct_missing drop that share of witness logs at random (per premises and event, seed 20261111); a missing log on an event reaching theta_hi is paid at 50% under R2 and counted as one payment. A real witness can also be wrong or spoofed; this study does not measure that. Thresholds for this study are its own (the share of monitors without supply), chosen on the first half with the same objective and product parameters as trigger_params.json (witness_share 0.5, false_confirmation_rate 0.1) using the premises truth, and scored on the second half. Chosen theta_lo 0.1, theta_hi 0.5 (objective 2671.75 in counts). theta_lo is the bottom edge of the grid (0.1 to 1.0), not an interior optimum. They are not the EAGLE-I thresholds and are not comparable to them. Definitions: a premises-event is an outage of 4 h or more at a premises (0 V run, missing gaps up to 120 min bridged, duration last minus first reading) starting when its district index is defined. A payment is a (premises, index event) pair with the premises' monitor reporting during the event; it is wrong if the premises had no 4 h outage overlapping the event. missed_rate = missed / premises_events; wrong_rate = wrong / paid. Index events are runs of 4 h or more (same run rules, 1-minute steps, no dropout rule, no hours-clause merge). Fit period, index_only, for reference: {'premises_events': 3943, 'paid': 1382, 'missed': 2983, 'wrong': 374, 'missed_rate': 0.7565305604869389, 'wrong_rate': 0.2706222865412446}.  The dataset's documentation ('About the initiative.pdf', Terms of use) allows non-commercial, academic and research use with the source acknowledged; Dataverse lists the licence as CC0 1.0. Task S6 is for the humans. train_years and test_years in this block are the EAGLE-I years required by the contract; this study's own periods are fit_period and score_period."
+  }
+}

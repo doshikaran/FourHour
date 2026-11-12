@@ -1,4 +1,4 @@
--- FourHour schema, CONTRACTS.md v1.2 section 3.
+-- FourHour schema, CONTRACTS.md v1.4 section 3.
 -- Times are ISO 8601 UTC strings with a Z suffix. Money is INTEGER cents.
 -- Booleans are INTEGER 0/1. Enums are TEXT with CHECK constraints.
 -- Every uniqueness rule in section 3 is a database constraint here.
@@ -15,14 +15,17 @@ CREATE TABLE policies (
     id                  TEXT PRIMARY KEY,
     member_id           TEXT NOT NULL REFERENCES members(id),
     fips                TEXT NOT NULL CHECK (length(fips) = 5 AND fips NOT GLOB '*[^0-9]*'),
-    cover_cents         INTEGER NOT NULL CHECK (cover_cents IN (5000, 15000, 30000)),
+    cover_cents         INTEGER NOT NULL,
     premium_cents       INTEGER NOT NULL CHECK (premium_cents >= 0),
     status              TEXT NOT NULL CHECK (status IN ('pending_vault', 'active', 'cancelled')),
     vault_setup_token   TEXT,
     vault_payment_token TEXT,
     model_version       TEXT NOT NULL,
     created_at          TEXT NOT NULL,
-    cancelled_at        TEXT
+    cancelled_at        TEXT,
+    -- 100 cents only for a seeded sandbox test policy (model_version 'test-cover').
+    CHECK (cover_cents IN (5000, 15000, 30000)
+           OR (cover_cents = 100 AND premium_cents = 100 AND model_version = 'test-cover'))
 );
 
 CREATE TABLE premium_charges (
@@ -94,7 +97,7 @@ CREATE UNIQUE INDEX witness_entries_device_seq_valid ON witness_entries (device_
 CREATE TABLE claims (
     id              TEXT PRIMARY KEY,
     policy_id       TEXT NOT NULL REFERENCES policies(id),
-    outage_event_id TEXT NOT NULL REFERENCES outage_events(id),
+    outage_event_id TEXT REFERENCES outage_events(id), -- null only for R5
     tier            TEXT NOT NULL CHECK (tier IN ('t4', 't24')),
     rule            TEXT NOT NULL CHECK (rule IN ('R1', 'R2', 'R3', 'R4', 'R5')),
     decision        TEXT NOT NULL CHECK (decision IN ('paid', 'declined', 'review')),
@@ -102,8 +105,16 @@ CREATE TABLE claims (
     reason          TEXT NOT NULL,
     decided_at      TEXT NOT NULL,
     sim_time        TEXT,
-    UNIQUE (policy_id, outage_event_id, tier)
+    witness_entry_id TEXT REFERENCES witness_entries(id), -- set only for R5
+    -- R5 has no outage event and is keyed by the entry that started the
+    -- witness interval; every other rule has an outage event and no entry.
+    CHECK ((rule = 'R5' AND outage_event_id IS NULL AND witness_entry_id IS NOT NULL)
+        OR (rule <> 'R5' AND outage_event_id IS NOT NULL AND witness_entry_id IS NULL))
 );
+
+-- One claim per (policy, outage event, tier); R5 one per (policy, witness entry).
+CREATE UNIQUE INDEX claims_policy_event_tier ON claims (policy_id, outage_event_id, tier) WHERE outage_event_id IS NOT NULL;
+CREATE UNIQUE INDEX claims_policy_witness_entry ON claims (policy_id, witness_entry_id) WHERE witness_entry_id IS NOT NULL;
 
 CREATE TABLE payouts (
     id              TEXT PRIMARY KEY,

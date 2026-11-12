@@ -20,7 +20,7 @@ func testHandler(t *testing.T, loaded []string) (http.Handler, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return NewHandler(Deps{DB: d, Log: quiet(), ArtifactsLoaded: loaded}), func() { d.Close() }
+	return NewHandler(Deps{DB: d, Log: quiet(), ArtifactsLoaded: func() []string { return loaded }}), func() { d.Close() }
 }
 
 func do(h http.Handler, method, path string) *httptest.ResponseRecorder {

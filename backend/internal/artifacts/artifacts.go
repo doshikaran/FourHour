@@ -53,7 +53,7 @@ type spec struct {
 // and per-county-year layout is not pinned down by the contract.
 func specs() []spec {
 	return []spec{
-		{TriggerParams, []string{"theta_hi", "theta_lo", "gap_bridge_minutes", "grid"}, nil},
+		{TriggerParams, []string{"theta_hi", "theta_lo", "gap_bridge_minutes", "event_merge_hours", "dropout_max_fraction", "grid"}, nil},
 		{PricingTable, []string{"model_version", "counties", "rates", "payout_schedule"}, checkPricingCounties},
 		{Backtest, []string{"frequency", "severity", "credibility", "pool"}, nil},
 		{Solvency, []string{"members", "simulations", "ruin_probability", "capital_1_in_200_cents", "stop_loss", "annual_loss_quantiles"}, checkStopLoss},

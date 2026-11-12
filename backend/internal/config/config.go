@@ -37,6 +37,19 @@ type Config struct {
 	DatabaseURL        string // DATABASE_URL, a SQLite file path
 	ArtifactsDir       string // ARTIFACTS_DIR
 	Port               string // PORT, digits only, 1-65535
+	DemoVaultToken     string // DEMO_VAULT_TOKEN; never printed
+	SandboxMemberEmail string // SANDBOX_MEMBER_EMAIL
+	SandboxPayoutEmail string // SANDBOX_PAYOUT_EMAIL
+}
+
+// IntegrationFlag is the environment variable that turns on the opt-in
+// sandbox integration test. It is a test switch, not a service setting.
+const IntegrationFlag = "FOURHOUR_SANDBOX_IT"
+
+// IntegrationEnabled reports whether IntegrationFlag is set to "1".
+func IntegrationEnabled(lookup LookupFunc) bool {
+	v, ok := lookup(IntegrationFlag)
+	return ok && v == "1"
 }
 
 // LookupFunc has the signature of os.LookupEnv.
@@ -78,6 +91,9 @@ func Load(lookup LookupFunc, envFile string) (Config, error) {
 		DatabaseURL:        get("DATABASE_URL"),
 		ArtifactsDir:       get("ARTIFACTS_DIR"),
 		Port:               get("PORT"),
+		DemoVaultToken:     get("DEMO_VAULT_TOKEN"),
+		SandboxMemberEmail: get("SANDBOX_MEMBER_EMAIL"),
+		SandboxPayoutEmail: get("SANDBOX_PAYOUT_EMAIL"),
 	}
 	if c.Port == "" {
 		c.Port = DefaultPort
@@ -95,8 +111,8 @@ func Load(lookup LookupFunc, envFile string) (Config, error) {
 }
 
 // Validate enforces the startup rules. The sandbox rule is absolute
-// (CLAUDE.md rule 6). PayPal credentials are not yet required because no
-// PayPal call exists in the service at this stage; see Missing.
+// (CLAUDE.md rule 6). PayPal credentials are checked when the PayPal client
+// is built; the other optional values are reported by Missing.
 func (c Config) Validate() error {
 	if c.PayPalBaseURL != SandboxBaseURL {
 		if c.PayPalBaseURL == "" {
@@ -113,8 +129,10 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// Missing lists variables that are empty but will be required from task B1,
-// when the PayPal calls and redirects arrive. The service logs them at startup.
+// Missing lists optional variables that are empty. The service logs them at
+// startup: without PAYPAL_WEBHOOK_ID webhooks are stored unverified, without
+// APP_BASE_URL no vault setup token can be created, without FRONTEND_URL
+// there is no CORS origin and no redirect target.
 func (c Config) Missing() []string {
 	var out []string
 	for _, kv := range []struct{ k, v string }{
@@ -133,12 +151,15 @@ func (c Config) Missing() []string {
 
 // String never includes the client secret.
 func (c Config) String() string {
-	secret := "<unset>"
-	if c.PayPalClientSecret != "" {
-		secret = "<redacted>"
+	return fmt.Sprintf("Config{PayPalBaseURL:%s PayPalClientID:%s PayPalClientSecret:%s PayPalWebhookID:%s AppBaseURL:%s FrontendURL:%s DatabaseURL:%s ArtifactsDir:%s Port:%s DemoVaultToken:%s SandboxMemberEmail:%s SandboxPayoutEmail:%s}",
+		c.PayPalBaseURL, c.PayPalClientID, redact(c.PayPalClientSecret), c.PayPalWebhookID, c.AppBaseURL, c.FrontendURL, c.DatabaseURL, c.ArtifactsDir, c.Port, redact(c.DemoVaultToken), c.SandboxMemberEmail, c.SandboxPayoutEmail)
+}
+
+func redact(v string) string {
+	if v == "" {
+		return "<unset>"
 	}
-	return fmt.Sprintf("Config{PayPalBaseURL:%s PayPalClientID:%s PayPalClientSecret:%s PayPalWebhookID:%s AppBaseURL:%s FrontendURL:%s DatabaseURL:%s ArtifactsDir:%s Port:%s}",
-		c.PayPalBaseURL, c.PayPalClientID, secret, c.PayPalWebhookID, c.AppBaseURL, c.FrontendURL, c.DatabaseURL, c.ArtifactsDir, c.Port)
+	return "<redacted>"
 }
 
 // GoString never includes the client secret.

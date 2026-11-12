@@ -36,10 +36,12 @@ const CHECKS: Record<ReplayEventName, (o: Record<string, unknown>) => boolean> =
     Array.isArray(o.open_events) &&
     Array.isArray(o.series) &&
     Array.isArray(o.claims),
-  tick: (o) => num(o, 'share') && num(o, 'customers_out') && str(o, 'fips'),
+  // share and customers_out are null for a missing interval (CONTRACTS 1.3), never absent.
+  tick: (o) => (num(o, 'share') || o.share === null) && (num(o, 'customers_out') || o.customers_out === null) && str(o, 'fips'),
   event_opened: (o) => str(o, 'outage_event_id') && (o.threshold === 'lo' || o.threshold === 'hi'),
   event_closed: (o) =>
     str(o, 'outage_event_id') && (o.threshold === 'lo' || o.threshold === 'hi') && num(o, 'duration_hours'),
+  event_merged: (o) => str(o, 'outage_event_id') && str(o, 'into_outage_event_id'),
   witness_entry: (o) => str(o, 'device_id') && str(o, 'policy_id') && str(o, 'kind') && bool(o, 'valid'),
   claim_decided: (o) => rec(o, 'claim'),
   payout_sent: (o) => rec(o, 'payout'),

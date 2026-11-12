@@ -1,0 +1,108 @@
+{
+  "model_version": "2026-11-12-5a552e3-dirty",
+  "counties": {
+    "48201": {
+      "expected_events_per_year": 0.25,
+      "prob_24h_given_event": 0.814744,
+      "prob_premises_affected": 0.396554,
+      "credibility_weight": 0.0
+    },
+    "12086": {
+      "expected_events_per_year": 0.25,
+      "prob_24h_given_event": 0.814744,
+      "prob_premises_affected": 0.396554,
+      "credibility_weight": 0.0
+    },
+    "17031": {
+      "expected_events_per_year": 0.0,
+      "prob_24h_given_event": 0.814744,
+      "prob_premises_affected": 0.396554,
+      "credibility_weight": 0.0
+    }
+  },
+  "rates": {
+    "risk_margin_rate": 0.479385,
+    "expense_load_cents": 100
+  },
+  "payout_schedule": {
+    "t4": 0.6,
+    "t24": 1.0
+  },
+  "provenance": {
+    "generated_at": "2026-11-12T00:09:46Z",
+    "git_commit": "5a552e3-dirty",
+    "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_pricing_table",
+    "data_sources": [
+      {
+        "name": "EAGLE-I recorded outages 2014 (eaglei_outages_2014.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547717",
+        "sha256": "f292a9f99066ac686df69767c535b218e70b4d4e748840ec620eda3340f914c9",
+        "rows_used": 0
+      },
+      {
+        "name": "EAGLE-I recorded outages 2015 (eaglei_outages_2015.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547822",
+        "sha256": "49de89b3427d564efbd9c80183caf4e9777966f7e319d4b30d682c1c0d064505",
+        "rows_used": 358147
+      },
+      {
+        "name": "EAGLE-I recorded outages 2016 (eaglei_outages_2016.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547825",
+        "sha256": "2c1b364a3b06aee56326174c4644750ea86ba9be4585c5e40eeb7835431bfc9c",
+        "rows_used": 367319
+      },
+      {
+        "name": "EAGLE-I recorded outages 2017 (eaglei_outages_2017.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547828",
+        "sha256": "47479c4fd645ec69685447f90baa51f08a85e776cedf612279b3e41c13147c8d",
+        "rows_used": 351173
+      },
+      {
+        "name": "EAGLE-I recorded outages 2018 (eaglei_outages_2018.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547879",
+        "sha256": "85e0a864aa272e75892e181f1da4754ed78f7bf0bef75a279d8ab381baa7db70",
+        "rows_used": 643332
+      },
+      {
+        "name": "EAGLE-I recorded outages 2019 (eaglei_outages_2019.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547885",
+        "sha256": "4cc277a138b326bd0e1f203558539a9422b40dacdf439e3d5b58ee71d7462d27",
+        "rows_used": 649042
+      },
+      {
+        "name": "EAGLE-I recorded outages 2020 (eaglei_outages_2020.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547894",
+        "sha256": "2a20b62e5245b1b9d4fcedc1bdbaf691bb1e17f75094975c8c6cb854f52e721a",
+        "rows_used": 678942
+      },
+      {
+        "name": "EAGLE-I recorded outages 2021 (eaglei_outages_2021.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547891",
+        "sha256": "e3e7ac40a40d92d92488501881ab381b8931833e486941424ac55ea20ffde319",
+        "rows_used": 700364
+      },
+      {
+        "name": "EAGLE-I recorded outages 2022 (eaglei_outages_2022.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547897",
+        "sha256": "ff8b58ae30fcbaf290f820bcd4f1420e536994bc9f0a87bb80991130478461b0",
+        "rows_used": 709225
+      },
+      {
+        "name": "EAGLE-I modeled county customers (MCC.csv)",
+        "url": "https://ndownloader.figshare.com/files/42547708",
+        "sha256": "d7fbe0d60ea71273f68bd744408059491fbc7f85b6254882d17783d7762bf65e",
+        "rows_used": 423
+      }
+    ],
+    "train_years": [
+      2014,
+      2022
+    ],
+    "test_years": [
+      2023,
+      2024
+    ],
+    "seed": 20261111,
+    "notes": "Model inputs fitted on training years only (2014-2022, 144 fitted county-years in the 22-county model universe). Events are theta_lo = 0.2 qualifying events (runs of 4 h or more after gap bridging, dropouts and the 72 h hours clause), CONTRACTS 1.7. expected_events_per_year = 12 x the B\u00fchlmann-Straub blended monthly rate (county rate blended with its state rate; the between-county variance estimate a is not positive, so k is undefined (null) and every county's credibility weight is 0: each county gets its state's rate). Training theta_lo events per demo county: Harris County, TX: 0, Miami-Dade County, FL: 1, Cook County, IL: 0. prob_24h_given_event: generalised Pareto fitted to the excess of the longest run over 4 h, pooled over all 34 training events (empirical share 0.8235); the same for every county. prob_premises_affected: SPEC 5.5 version 1, the mean share of customers out during training event windows, pooled over all training events (34); the same for every county. risk_margin_rate = cost of capital 0.06 x (1-in-200 simulated annual pool loss - mean loss) / mean loss = 0.06 x (3195000 - 355404) / 355404 (solvency.json). expense_load_cents 100 per member per month. Product parameters set by the humans on 2026-11-12: expense_load_cents 100, cost of capital 0.06, payout_schedule t4 0.6 / t24 1.0 (the 60/40 split is a product assumption). Premiums this table gives under the CONTRACTS section 4 formula (cents per month, cover 5000/15000/30000): Harris County, TX: 157, 270, 439; Miami-Dade County, FL: 157, 270, 439; Cook County, IL: 100, 100, 100. Priced case: a member with a registered witness. R2 (no witness, 50% on theta_hi events) is not priced in version 1; its cost is reported in backtest.json."
+  }
+}

@@ -1,0 +1,24 @@
+{
+ "theta_hi": 0.05,
+ "theta_lo": 0.01,
+ "gap_bridge_minutes": 120,
+ "event_merge_hours": 72,
+ "dropout_max_fraction": 0.1,
+ "grid": [],
+ "provenance": {
+  "generated_at": "2026-11-12T00:00:00Z",
+  "git_commit": "fixture",
+  "code": "backend/internal/artifacts/fixtures (hand-written fixture)",
+  "data_sources": [],
+  "train_years": [
+   2014,
+   2022
+  ],
+  "test_years": [
+   2023,
+   2024
+  ],
+  "seed": null,
+  "notes": "FIXTURE, not computed from data. Used by the backend only while artifacts/trigger_params.json is missing or invalid, so the replay loop can run. theta_hi and theta_lo here are placeholders; gap_bridge_minutes, event_merge_hours and dropout_max_fraction are the product values from SPEC.md and CONTRACTS.md (D1, D2, 1.6). Never show these thresholds as model results."
+ }
+}

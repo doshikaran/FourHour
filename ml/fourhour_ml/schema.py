@@ -1,12 +1,7 @@
-"""Artifact schema check against CONTRACTS.md section 8 (version 1.2).
+"""Artifact schema check against CONTRACTS.md section 8 and 8.1 (version 1.7).
 
-``write_artifact`` validates before writing; a file that fails is never written.
-
-Where section 8 names a key, it is enforced exactly (name, type, nullability). Where
-section 8 only describes contents in prose without naming keys (for example the items of
-``trigger_params.grid`` or the per county-year rows of ``data_quality.json``), this check
-enforces only what is named and ``UNSPECIFIED`` records the gap. Those gaps are open
-contract questions for the lead; they are not filled in with guessed key names here.
+``write_artifact`` validates before writing; a file that fails is never written. Every key
+section 8.1 pins is enforced exactly (name, type, nullability); unknown keys are rejected.
 """
 
 from __future__ import annotations
@@ -21,7 +16,7 @@ from typing import Any, TypeGuard
 
 from .config import ARTIFACTS_DIR, REPO_DIR, SEED, TEST_YEARS, TRAIN_YEARS
 
-CONTRACT_VERSION = "1.2"
+CONTRACT_VERSION = "1.7"
 
 ISO_Z = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 FIPS = re.compile(r"^\d{5}$")
@@ -40,19 +35,17 @@ BASIS_RISK_SCHEMES = ("index_only", "rules_perfect_witness", "rules_10pct_missin
 STOP_LOSS_KEYS = ("attachment_cents", "limit_cents", "price_cents")
 PRICING_COUNTY_FIELDS = ("expected_events_per_year", "prob_24h_given_event", "prob_premises_affected", "credibility_weight")
 
-UNSPECIFIED = {
-    "trigger_params.grid[]": "item key names (the pair and its expected wrong/missed payouts)",
-    "backtest.frequency": "inner keys (per county and year counts, deviance, calibration bins)",
-    "backtest.severity": "inner keys (GPD parameters, fit statistic, QQ points)",
-    "backtest.credibility": "inner shape (weight per county)",
-    "backtest.pool": "inner keys (per test year premiums, payouts, loss ratio, events) and units",
-    "solvency.annual_loss_quantiles": "shape",
-    "basis_risk.<scheme>": "where the four schemes sit (checked here at top level, provisionally) and their count keys",
-    "basis_risk.fit_period/score_period": "type",
-    "data_quality": "top-level key holding the per county-year rows, and their key names",
-    "scenario.source": "type (only presence is checked)",
-    "scenario.series[]": "how a missing 15-minute row appears (checked here as no gaps, integer customers_out, provisionally)",
-}
+GRID_KEYS = ("theta_lo", "theta_hi", "expected_wrong_payouts", "expected_missed_payouts", "objective", "chosen")
+FREQ_MODELS = ("nb_glm", "poisson_glm", "historical_mean")
+VARIANTS = ("exclude_low_coverage", "include_low_coverage")
+VARIANT_KEYS = ("county_years_fitted", "per_county_year", "deviance", "log_score", "calibration", "beats_baselines")
+LOSS_QUANTILES = (0.5, 0.9, 0.99, 0.995)
+DQ_ROW_KEYS = ("fips", "county", "state", "year", "county_customers", "expected_intervals", "intervals_present", "coverage_share", "zero_rows", "max_customers_out", "intervals_over_county_customers", "in_model_universe", "excluded_from_fitting", "exclusion_reason")
+THETA_HI_STATUS = ("interior_optimum", "grid_edge_no_interior_optimum")
+DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+# CONTRACTS 1.7 section 8.1 pins every shape; nothing is left open.
+UNSPECIFIED: dict[str, str] = {}
 
 
 class ArtifactSchemaError(ValueError):
@@ -177,18 +170,49 @@ def _check_provenance(v: _V, doc: dict) -> None:
 
 
 def _check_trigger_params(v: _V, d: dict) -> None:
-    v.obj(d, "", ("theta_hi", "theta_lo", "gap_bridge_minutes", "grid", "provenance"), allow_extra=False)
+    v.obj(d, "", ("theta_hi", "theta_lo", "gap_bridge_minutes", "event_merge_hours", "dropout_max_fraction", "theta_hi_status", "sensitivity", "grid", "provenance"), allow_extra=False)
+    if d.get("theta_hi_status") not in THETA_HI_STATUS:
+        v.err("theta_hi_status", f"must be one of {THETA_HI_STATUS}")
+    sens = d.get("sensitivity")
+    if not isinstance(sens, list) or not sens:
+        v.err("sensitivity", "must be a non-empty list")
+    else:
+        for i, it in enumerate(sens):
+            path = f"sensitivity[{i}]"
+            if v.obj(it, path, ("witness_share", "false_confirmation_rate", "theta_lo", "theta_hi", "theta_hi_status", "objective"), allow_extra=False):
+                for k in ("witness_share", "false_confirmation_rate", "theta_lo", "theta_hi"):
+                    v.num(it, k, path, nullable=False, lo=0, hi=1)
+                v.num(it, "objective", path, lo=0)
+                if it.get("theta_hi_status") not in THETA_HI_STATUS:
+                    v.err(f"{path}.theta_hi_status", f"must be one of {THETA_HI_STATUS}")
     v.num(d, "theta_hi", "", lo=0, hi=1)
     v.num(d, "theta_lo", "", lo=0, hi=1)
     v.int_(d, "gap_bridge_minutes", "", nullable=False, lo=0)
+    v.num(d, "event_merge_hours", "", nullable=False, lo=0)
+    v.num(d, "dropout_max_fraction", "", nullable=False, lo=0, hi=1)
     if _is_num(d.get("theta_hi")) and _is_num(d.get("theta_lo")) and not d["theta_lo"] < d["theta_hi"]:
         v.err("theta_lo", "must be below theta_hi (SPEC.md section 4)")
     g = d.get("grid")
     if "grid" in d:
         if not isinstance(g, list) or not g:
             v.err("grid", "must be a non-empty list")
-        elif not all(isinstance(x, dict) for x in g):
-            v.err("grid", "items must be objects")
+            return
+        chosen = 0
+        for i, it in enumerate(g):
+            path = f"grid[{i}]"
+            if v.obj(it, path, GRID_KEYS, allow_extra=False):
+                v.num(it, "theta_lo", path, nullable=False, lo=0, hi=1)
+                v.num(it, "theta_hi", path, nullable=False, lo=0, hi=1)
+                for k in ("expected_wrong_payouts", "expected_missed_payouts", "objective"):
+                    v.num(it, k, path, lo=0)
+                if not isinstance(it.get("chosen"), bool):
+                    v.err(f"{path}.chosen", "must be a boolean")
+                elif it["chosen"]:
+                    chosen += 1
+                    if it.get("theta_lo") != d.get("theta_lo") or it.get("theta_hi") != d.get("theta_hi"):
+                        v.err(path, "the chosen pair must equal theta_lo and theta_hi")
+        if d.get("theta_hi") is not None and chosen != 1:
+            v.err("grid", f"exactly one item must be chosen, got {chosen}")
 
 
 def _check_pricing_table(v: _V, d: dict) -> None:
@@ -219,12 +243,128 @@ def _check_pricing_table(v: _V, d: dict) -> None:
             v.err("payout_schedule", "t4 must not exceed t24")
 
 
+def _num_map(v: _V, d: Any, path: str, keys: tuple[str, ...], lo: float | None = None) -> None:
+    if v.obj(d, path, keys, allow_extra=False):
+        for k in keys:
+            v.num(d, k, path, lo=lo)
+
+
+def _check_variant(v: _V, V: Any, path: str) -> None:
+    if not v.obj(V, path, VARIANT_KEYS, allow_extra=False):
+        return
+    v.int_(V, "county_years_fitted", path, nullable=False, lo=0)
+    rows = V.get("per_county_year")
+    if not isinstance(rows, list):
+        v.err(f"{path}.per_county_year", "must be a list")
+    else:
+        for i, r in enumerate(rows):
+            p = f"{path}.per_county_year[{i}]"
+            if v.obj(r, p, ("fips", "year", "realised") + FREQ_MODELS, allow_extra=False):
+                v.str_(r, "fips", p, pattern=FIPS)
+                v.int_(r, "year", p, nullable=False)
+                v.int_(r, "realised", p, nullable=False, lo=0)
+                for m in FREQ_MODELS:
+                    v.num(r, m, p, lo=0)
+    _num_map(v, V.get("deviance"), f"{path}.deviance", FREQ_MODELS, lo=0)
+    _num_map(v, V.get("log_score"), f"{path}.log_score", FREQ_MODELS)
+    cal = V.get("calibration")
+    if v.obj(cal, f"{path}.calibration", FREQ_MODELS, allow_extra=False):
+        for m in FREQ_MODELS:
+            bins = cal.get(m)
+            if not isinstance(bins, list):
+                v.err(f"{path}.calibration.{m}", "must be a list")
+                continue
+            for i, b in enumerate(bins):
+                p = f"{path}.calibration.{m}[{i}]"
+                if v.obj(b, p, ("bin", "n", "predicted_mean", "realised_mean"), allow_extra=False):
+                    v.int_(b, "bin", p, nullable=False, lo=1)
+                    v.int_(b, "n", p, nullable=False, lo=0)
+                    v.num(b, "predicted_mean", p, lo=0)
+                    v.num(b, "realised_mean", p, lo=0)
+    if not (V.get("beats_baselines") is None or isinstance(V.get("beats_baselines"), bool)):
+        v.err(f"{path}.beats_baselines", "must be a boolean or null")
+    v.present(V, "beats_baselines", path)
+
+
 def _check_backtest(v: _V, d: dict) -> None:
     v.obj(d, "", ("frequency", "severity", "credibility", "pool", "provenance"), allow_extra=False)
-    for k in ("frequency", "severity", "credibility", "pool"):
-        v.present(d, k, "")
-        if d.get(k) is not None and not isinstance(d[k], (dict, list)):
-            v.err(k, "must be an object, a list or null")
+    f = d.get("frequency")
+    if v.obj(f, "frequency", ("threshold", "theta", "unit", "primary_variant", "variants"), allow_extra=False):
+        if f.get("threshold") != "theta_lo":
+            v.err("frequency.threshold", "must be 'theta_lo' (CONTRACTS 1.7 section 8.1)")
+        v.num(f, "theta", "frequency", nullable=False, lo=0, hi=1)
+        v.str_(f, "unit", "frequency")
+        if f.get("primary_variant") not in VARIANTS:
+            v.err("frequency.primary_variant", f"must be one of {VARIANTS}")
+        vs = f.get("variants")
+        if v.obj(vs, "frequency.variants", VARIANTS, allow_extra=False):
+            for k in VARIANTS:
+                _check_variant(v, vs.get(k), f"frequency.variants.{k}")
+    sv = d.get("severity")
+    sev_keys = ("threshold_hours", "n_events_train", "n_events_test", "gpd", "ks_statistic", "ks_pvalue", "prob_24h_given_event", "qq")
+    if v.obj(sv, "severity", sev_keys, allow_extra=False):
+        v.num(sv, "threshold_hours", "severity", nullable=False, lo=0)
+        v.int_(sv, "n_events_train", "severity", nullable=False, lo=0)
+        v.int_(sv, "n_events_test", "severity", nullable=False, lo=0)
+        g = sv.get("gpd")
+        if g is None:
+            v.present(sv, "gpd", "severity")
+        elif v.obj(g, "severity.gpd", ("shape", "scale", "location_hours"), allow_extra=False):
+            v.num(g, "shape", "severity.gpd")
+            v.num(g, "scale", "severity.gpd", lo=0)
+            v.num(g, "location_hours", "severity.gpd", lo=0)
+        v.num(sv, "ks_statistic", "severity", lo=0, hi=1)
+        v.num(sv, "ks_pvalue", "severity", lo=0, hi=1)
+        p24 = sv.get("prob_24h_given_event")
+        if v.obj(p24, "severity.prob_24h_given_event", ("fitted", "empirical_train", "empirical_test"), allow_extra=False):
+            for k in ("fitted", "empirical_train", "empirical_test"):
+                v.num(p24, k, "severity.prob_24h_given_event", lo=0, hi=1)
+        qq = sv.get("qq")
+        if not isinstance(qq, list):
+            v.err("severity.qq", "must be a list")
+        else:
+            for i, pt in enumerate(qq):
+                _num_map(v, pt, f"severity.qq[{i}]", ("empirical_hours", "model_hours"), lo=0)
+    c = d.get("credibility")
+    if v.obj(c, "credibility", ("method", "k", "counties"), allow_extra=False):
+        if c.get("method") != "buhlmann_straub":
+            v.err("credibility.method", "must be 'buhlmann_straub'")
+        v.num(c, "k", "credibility", lo=0)
+        cs = c.get("counties")
+        if v.obj(cs, "credibility.counties", (), allow_extra=True):
+            for fips, row in cs.items():
+                p = f"credibility.counties.{fips}"
+                if not FIPS.match(str(fips)):
+                    v.err(p, "key must be a 5-digit FIPS string")
+                if v.obj(row, p, ("state", "county_rate", "state_rate", "exposure_months", "weight", "blended_rate"), allow_extra=False):
+                    v.str_(row, "state", p)
+                    v.num(row, "county_rate", p, lo=0)
+                    v.num(row, "state_rate", p, lo=0)
+                    v.int_(row, "exposure_months", p, nullable=False, lo=0)
+                    v.num(row, "weight", p, lo=0, hi=1)
+                    v.num(row, "blended_rate", p, lo=0)
+    pool = d.get("pool")
+    if v.obj(pool, "pool", ("members", "years"), allow_extra=False):
+        v.int_(pool, "members", "pool", nullable=False, lo=1)
+        ys = pool.get("years")
+        if not isinstance(ys, list):
+            v.err("pool.years", "must be a list")
+        else:
+            for i, y in enumerate(ys):
+                p = f"pool.years[{i}]"
+                if v.obj(y, p, ("year", "premiums_cents", "payouts_cents", "loss_ratio", "events", "events_by_county", "claims_paid"), allow_extra=False):
+                    v.int_(y, "year", p, nullable=False)
+                    v.int_(y, "premiums_cents", p, lo=0)
+                    v.int_(y, "payouts_cents", p, lo=0)
+                    v.num(y, "loss_ratio", p, lo=0)
+                    v.int_(y, "events", p, nullable=False, lo=0)
+                    v.int_(y, "claims_paid", p, lo=0)
+                    ebc = y.get("events_by_county")
+                    if v.obj(ebc, f"{p}.events_by_county", (), allow_extra=True):
+                        for fips in ebc:
+                            if not FIPS.match(str(fips)):
+                                v.err(f"{p}.events_by_county", "keys must be FIPS")
+                            v.int_(ebc, fips, f"{p}.events_by_county", nullable=False, lo=0)
 
 
 def _check_solvency(v: _V, d: dict) -> None:
@@ -241,30 +381,126 @@ def _check_solvency(v: _V, d: dict) -> None:
         for k in STOP_LOSS_KEYS:
             v.int_(sl, k, "stop_loss", lo=0)
     q = d.get("annual_loss_quantiles")
-    v.present(d, "annual_loss_quantiles", "")
-    if q is not None and not isinstance(q, (dict, list)):
-        v.err("annual_loss_quantiles", "must be an object, a list or null")
+    if "annual_loss_quantiles" in d:
+        if not isinstance(q, list) or [x.get("q") if isinstance(x, dict) else None for x in q] != list(LOSS_QUANTILES):
+            v.err("annual_loss_quantiles", f"must be a list of {{q, loss_cents}} for q = {list(LOSS_QUANTILES)}")
+        else:
+            for i, x in enumerate(q):
+                p = f"annual_loss_quantiles[{i}]"
+                if v.obj(x, p, ("q", "loss_cents"), allow_extra=False):
+                    v.int_(x, "loss_cents", p, lo=0)
 
 
 def _check_basis_risk(v: _V, d: dict) -> None:
-    v.obj(d, "", BASIS_RISK_SCHEMES + ("districts_used", "fit_period", "score_period", "provenance"), allow_extra=False)
-    for s in BASIS_RISK_SCHEMES:
-        row = d.get(s)
-        if row is None:
-            v.present(d, s, "")
-            continue
-        if v.obj(row, s, ("missed_rate", "wrong_rate"), allow_extra=True):
-            v.num(row, "missed_rate", s, lo=0, hi=1)
-            v.num(row, "wrong_rate", s, lo=0, hi=1)
-    if "districts_used" in d and not isinstance(d["districts_used"], list):
+    keys = ("schemes", "districts_used", "min_active_monitors", "theta_hi", "theta_lo", "fit_period", "score_period", "provenance")
+    v.obj(d, "", keys, allow_extra=False)
+    sc = d.get("schemes")
+    if v.obj(sc, "schemes", BASIS_RISK_SCHEMES, allow_extra=False):
+        for s in BASIS_RISK_SCHEMES:
+            row = sc.get(s)
+            p = f"schemes.{s}"
+            if v.obj(row, p, ("premises_events", "paid", "missed", "wrong", "missed_rate", "wrong_rate"), allow_extra=False):
+                for k in ("premises_events", "paid", "missed", "wrong"):
+                    v.int_(row, k, p, lo=0)
+                v.num(row, "missed_rate", p, lo=0, hi=1)
+                v.num(row, "wrong_rate", p, lo=0, hi=1)
+    du = d.get("districts_used")
+    if not isinstance(du, list):
         v.err("districts_used", "must be a list")
+    else:
+        for i, x in enumerate(du):
+            p = f"districts_used[{i}]"
+            if v.obj(x, p, ("state", "district", "median_active_monitors"), allow_extra=False):
+                v.str_(x, "state", p)
+                v.str_(x, "district", p)
+                v.num(x, "median_active_monitors", p, nullable=False, lo=0)
+    v.int_(d, "min_active_monitors", "", nullable=False, lo=1)
+    v.num(d, "theta_hi", "", lo=0, hi=1)
+    v.num(d, "theta_lo", "", lo=0, hi=1)
     for k in ("fit_period", "score_period"):
-        v.present(d, k, "")
+        per = d.get(k)
+        if v.obj(per, k, ("start", "end"), allow_extra=False):
+            v.str_(per, "start", k, pattern=DATE)
+            v.str_(per, "end", k, pattern=DATE)
 
 
 def _check_data_quality(v: _V, d: dict) -> None:
-    if not isinstance(d, dict) or len(d) < 2:
-        v.err("", "must hold per county-year rows besides provenance")
+    keys = ("coverage_floor", "rows", "year_summary", "gap_bridge_evidence", "storm_windows", "timestamp_check", "county_coverage", "provenance")
+    v.obj(d, "", keys, allow_extra=False)
+    v.num(d, "coverage_floor", "", nullable=False, lo=0, hi=1)
+    rows = d.get("rows")
+    if not isinstance(rows, list) or not rows:
+        v.err("rows", "must be a non-empty list")
+    else:
+        for i, r in enumerate(rows):
+            p = f"rows[{i}]"
+            if v.obj(r, p, DQ_ROW_KEYS, allow_extra=False):
+                v.str_(r, "fips", p, pattern=FIPS)
+                v.str_(r, "county", p)
+                v.str_(r, "state", p)
+                for k in ("year", "county_customers", "expected_intervals", "intervals_present", "zero_rows", "intervals_over_county_customers"):
+                    v.int_(r, k, p, nullable=False, lo=0)
+                v.num(r, "coverage_share", p, nullable=False, lo=0, hi=1)
+                v.num(r, "max_customers_out", p, lo=0)
+                for k in ("in_model_universe", "excluded_from_fitting"):
+                    if not isinstance(r.get(k), bool):
+                        v.err(f"{p}.{k}", "must be a boolean")
+                if not isinstance(r.get("exclusion_reason"), str):
+                    v.err(f"{p}.exclusion_reason", "must be a string")
+    ys = d.get("year_summary")
+    if not isinstance(ys, list):
+        v.err("year_summary", "must be a list")
+    else:
+        for i, y in enumerate(ys):
+            p = f"year_summary[{i}]"
+            if v.obj(y, p, ("year", "rows", "zero_rows", "null_rows", "off_grid_rows", "first_t", "last_t"), allow_extra=False):
+                for k in ("year", "rows", "zero_rows", "null_rows", "off_grid_rows"):
+                    v.int_(y, k, p, nullable=False, lo=0)
+                v.str_(y, "first_t", p, pattern=ISO_Z)
+                v.str_(y, "last_t", p, pattern=ISO_Z)
+    g = d.get("gap_bridge_evidence")
+    if v.obj(g, "gap_bridge_evidence", ("events_examined", "gaps", "share_of_gaps_within_bridge"), allow_extra=False):
+        v.int_(g, "events_examined", "gap_bridge_evidence", nullable=False, lo=0)
+        v.num(g, "share_of_gaps_within_bridge", "gap_bridge_evidence", lo=0, hi=1)
+        if not isinstance(g.get("gaps"), list):
+            v.err("gap_bridge_evidence.gaps", "must be a list")
+        else:
+            for i, x in enumerate(g["gaps"]):
+                p = f"gap_bridge_evidence.gaps[{i}]"
+                if v.obj(x, p, ("minutes", "count"), allow_extra=False):
+                    v.int_(x, "minutes", p, nullable=False, lo=1)
+                    v.int_(x, "count", p, nullable=False, lo=0)
+    sw = d.get("storm_windows")
+    if not isinstance(sw, list):
+        v.err("storm_windows", "must be a list")
+    else:
+        for i, w in enumerate(sw):
+            p = f"storm_windows[{i}]"
+            if v.obj(w, p, ("id", "fips", "start", "end", "expected_intervals", "intervals_present", "zero_rows", "longest_missing_minutes", "notes"), allow_extra=False):
+                v.str_(w, "id", p, pattern=SCENARIO_ID)
+                v.str_(w, "fips", p, pattern=FIPS)
+                v.str_(w, "start", p, pattern=ISO_Z)
+                v.str_(w, "end", p, pattern=ISO_Z)
+                for k in ("expected_intervals", "intervals_present", "zero_rows", "longest_missing_minutes"):
+                    v.int_(w, k, p, nullable=False, lo=0)
+                v.str_(w, "notes", p)
+    tc = d.get("timestamp_check")
+    if v.obj(tc, "timestamp_check", ("assumed", "storm", "first_sharp_rise_utc", "consistent_with_utc", "evidence"), allow_extra=False):
+        v.str_(tc, "assumed", "timestamp_check")
+        v.str_(tc, "storm", "timestamp_check")
+        v.str_(tc, "first_sharp_rise_utc", "timestamp_check", nullable=True, pattern=ISO_Z)
+        if not (tc.get("consistent_with_utc") is None or isinstance(tc.get("consistent_with_utc"), bool)):
+            v.err("timestamp_check.consistent_with_utc", "must be a boolean or null")
+        v.present(tc, "consistent_with_utc", "timestamp_check")
+        v.str_(tc, "evidence", "timestamp_check")
+    cc = d.get("county_coverage")
+    if v.obj(cc, "county_coverage", (), allow_extra=True):
+        for fips, row in cc.items():
+            p = f"county_coverage.{fips}"
+            if not FIPS.match(str(fips)):
+                v.err(p, "key must be a 5-digit FIPS string")
+            if v.obj(row, p, ("data_coverage",), allow_extra=False):
+                v.num(row, "data_coverage", p, lo=0, hi=1)
 
 
 def _check_scenario(v: _V, d: dict) -> None:
@@ -277,7 +513,12 @@ def _check_scenario(v: _V, d: dict) -> None:
     v.int_(d, "county_customers", "", nullable=False, lo=1)
     v.str_(d, "start", "", pattern=ISO_Z)
     v.str_(d, "end", "", pattern=ISO_Z)
-    v.present(d, "source", "")  # type is open in CONTRACTS 1.2
+    src = d.get("source")
+    if v.obj(src, "source", ("dataset", "url", "file", "sha256"), allow_extra=False):
+        v.str_(src, "dataset", "source")
+        v.str_(src, "url", "source")
+        v.str_(src, "file", "source")
+        v.str_(src, "sha256", "source", pattern=re.compile(r"^[0-9a-f]{64}$"))
     times: list[datetime] = []
     series = d.get("series")
     if "series" in d:
@@ -288,8 +529,12 @@ def _check_scenario(v: _V, d: dict) -> None:
             path = f"series[{i}]"
             if v.obj(pt, path, ("t", "customers_out", "share"), allow_extra=False):
                 v.str_(pt, "t", path, pattern=ISO_Z)
-                v.int_(pt, "customers_out", path, nullable=False, lo=0)
-                v.num(pt, "share", path, nullable=False, lo=0)
+                # CONTRACTS 1.3: a missing 15-minute row is a point with both values null.
+                if (pt.get("customers_out") is None) != (pt.get("share") is None):
+                    v.err(path, "customers_out and share must both be null or both be set")
+                elif pt.get("customers_out") is not None:
+                    v.int_(pt, "customers_out", path, nullable=False, lo=0)
+                    v.num(pt, "share", path, nullable=False, lo=0, hi=1)
                 if isinstance(pt.get("t"), str) and ISO_Z.match(pt["t"]):
                     times.append(_parse_z(pt["t"]))
     if len(times) > 1:

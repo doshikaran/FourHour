@@ -1,0 +1,1681 @@
+{
+  "theta_hi": 0.9,
+  "theta_lo": 0.2,
+  "gap_bridge_minutes": 120,
+  "event_merge_hours": 72,
+  "dropout_max_fraction": 0.1,
+  "theta_hi_status": "grid_edge_no_interior_optimum",
+  "sensitivity": [
+    {
+      "witness_share": 0.25,
+      "false_confirmation_rate": 0.05,
+      "theta_lo": 0.15,
+      "theta_hi": 0.9,
+      "theta_hi_status": "grid_edge_no_interior_optimum",
+      "objective": 0.083543
+    },
+    {
+      "witness_share": 0.25,
+      "false_confirmation_rate": 0.1,
+      "theta_lo": 0.2,
+      "theta_hi": 0.9,
+      "theta_hi_status": "grid_edge_no_interior_optimum",
+      "objective": 0.085277
+    },
+    {
+      "witness_share": 0.25,
+      "false_confirmation_rate": 0.2,
+      "theta_lo": 0.4,
+      "theta_hi": 0.9,
+      "theta_hi_status": "grid_edge_no_interior_optimum",
+      "objective": 0.08701
+    },
+    {
+      "witness_share": 0.5,
+      "false_confirmation_rate": 0.05,
+      "theta_lo": 0.15,
+      "theta_hi": 0.9,
+      "theta_hi_status": "grid_edge_no_interior_optimum",
+      "objective": 0.075128
+    },
+    {
+      "witness_share": 0.5,
+      "false_confirmation_rate": 0.1,
+      "theta_lo": 0.2,
+      "theta_hi": 0.9,
+      "theta_hi_status": "grid_edge_no_interior_optimum",
+      "objective": 0.078598
+    },
+    {
+      "witness_share": 0.5,
+      "false_confirmation_rate": 0.2,
+      "theta_lo": 0.4,
+      "theta_hi": 0.7,
+      "theta_hi_status": "interior_optimum",
+      "objective": 0.081693
+    },
+    {
+      "witness_share": 0.75,
+      "false_confirmation_rate": 0.05,
+      "theta_lo": 0.15,
+      "theta_hi": 0.7,
+      "theta_hi_status": "interior_optimum",
+      "objective": 0.066517
+    },
+    {
+      "witness_share": 0.75,
+      "false_confirmation_rate": 0.1,
+      "theta_lo": 0.2,
+      "theta_hi": 0.7,
+      "theta_hi_status": "interior_optimum",
+      "objective": 0.071162
+    },
+    {
+      "witness_share": 0.75,
+      "false_confirmation_rate": 0.2,
+      "theta_lo": 0.3,
+      "theta_hi": 0.4,
+      "theta_hi_status": "interior_optimum",
+      "objective": 0.075109
+    }
+  ],
+  "grid": [
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.005,
+      "expected_wrong_payouts": 0.948202,
+      "expected_missed_payouts": 0.029904,
+      "objective": 0.978106,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.0075,
+      "expected_wrong_payouts": 0.714545,
+      "expected_missed_payouts": 0.031901,
+      "objective": 0.746445,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.01,
+      "expected_wrong_payouts": 0.619918,
+      "expected_missed_payouts": 0.032866,
+      "objective": 0.652784,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.015,
+      "expected_wrong_payouts": 0.502292,
+      "expected_missed_payouts": 0.034509,
+      "objective": 0.536801,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.02,
+      "expected_wrong_payouts": 0.460587,
+      "expected_missed_payouts": 0.035148,
+      "objective": 0.495735,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.418691,
+      "expected_missed_payouts": 0.035828,
+      "objective": 0.454519,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.385854,
+      "expected_missed_payouts": 0.036728,
+      "objective": 0.422582,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.372104,
+      "expected_missed_payouts": 0.037148,
+      "objective": 0.409252,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.359303,
+      "expected_missed_payouts": 0.03736,
+      "objective": 0.396663,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.354381,
+      "expected_missed_payouts": 0.037514,
+      "objective": 0.391894,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.34068,
+      "expected_missed_payouts": 0.03821,
+      "objective": 0.37889,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.335747,
+      "expected_missed_payouts": 0.038673,
+      "objective": 0.374419,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.323668,
+      "expected_missed_payouts": 0.040297,
+      "objective": 0.363965,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.318195,
+      "expected_missed_payouts": 0.041273,
+      "objective": 0.359468,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.31396,
+      "expected_missed_payouts": 0.042339,
+      "objective": 0.356299,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.310991,
+      "expected_missed_payouts": 0.043684,
+      "objective": 0.354675,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.309647,
+      "expected_missed_payouts": 0.04385,
+      "objective": 0.353497,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.308717,
+      "expected_missed_payouts": 0.045043,
+      "objective": 0.35376,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0025,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.308198,
+      "expected_missed_payouts": 0.045558,
+      "objective": 0.353756,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.0075,
+      "expected_wrong_payouts": 0.564957,
+      "expected_missed_payouts": 0.040873,
+      "objective": 0.60583,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.01,
+      "expected_wrong_payouts": 0.470252,
+      "expected_missed_payouts": 0.041839,
+      "objective": 0.512091,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.015,
+      "expected_wrong_payouts": 0.352534,
+      "expected_missed_payouts": 0.043481,
+      "objective": 0.396016,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.02,
+      "expected_wrong_payouts": 0.310792,
+      "expected_missed_payouts": 0.044121,
+      "objective": 0.354913,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.268851,
+      "expected_missed_payouts": 0.0448,
+      "objective": 0.313651,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.235983,
+      "expected_missed_payouts": 0.045701,
+      "objective": 0.281683,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.222218,
+      "expected_missed_payouts": 0.046121,
+      "objective": 0.268338,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.209393,
+      "expected_missed_payouts": 0.046332,
+      "objective": 0.255725,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.204467,
+      "expected_missed_payouts": 0.046486,
+      "objective": 0.250953,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.19072,
+      "expected_missed_payouts": 0.047183,
+      "objective": 0.237903,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.185775,
+      "expected_missed_payouts": 0.047645,
+      "objective": 0.23342,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.173668,
+      "expected_missed_payouts": 0.04927,
+      "objective": 0.222938,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.168179,
+      "expected_missed_payouts": 0.050246,
+      "objective": 0.218425,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.163824,
+      "expected_missed_payouts": 0.051311,
+      "objective": 0.215135,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.160839,
+      "expected_missed_payouts": 0.052656,
+      "objective": 0.213495,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.159478,
+      "expected_missed_payouts": 0.052822,
+      "objective": 0.2123,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.158535,
+      "expected_missed_payouts": 0.054016,
+      "objective": 0.212551,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.005,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.158015,
+      "expected_missed_payouts": 0.05453,
+      "objective": 0.212545,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.01,
+      "expected_wrong_payouts": 0.412755,
+      "expected_missed_payouts": 0.045833,
+      "objective": 0.458588,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.015,
+      "expected_wrong_payouts": 0.294967,
+      "expected_missed_payouts": 0.047476,
+      "objective": 0.342443,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.02,
+      "expected_wrong_payouts": 0.253189,
+      "expected_missed_payouts": 0.048115,
+      "objective": 0.301305,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.211219,
+      "expected_missed_payouts": 0.048794,
+      "objective": 0.260013,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.178318,
+      "expected_missed_payouts": 0.049695,
+      "objective": 0.228014,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.164538,
+      "expected_missed_payouts": 0.050115,
+      "objective": 0.214653,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.151683,
+      "expected_missed_payouts": 0.050327,
+      "objective": 0.202009,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.146751,
+      "expected_missed_payouts": 0.05048,
+      "objective": 0.197232,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.132992,
+      "expected_missed_payouts": 0.051177,
+      "objective": 0.184169,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.128041,
+      "expected_missed_payouts": 0.051639,
+      "objective": 0.179681,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.11591,
+      "expected_missed_payouts": 0.053264,
+      "objective": 0.169174,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.110408,
+      "expected_missed_payouts": 0.05424,
+      "objective": 0.164648,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.106046,
+      "expected_missed_payouts": 0.055306,
+      "objective": 0.161351,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.10305,
+      "expected_missed_payouts": 0.056651,
+      "objective": 0.159701,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.101687,
+      "expected_missed_payouts": 0.056817,
+      "objective": 0.158503,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.100733,
+      "expected_missed_payouts": 0.05801,
+      "objective": 0.158743,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.0075,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.100212,
+      "expected_missed_payouts": 0.058525,
+      "objective": 0.158737,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.015,
+      "expected_wrong_payouts": 0.271633,
+      "expected_missed_payouts": 0.049406,
+      "objective": 0.32104,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.02,
+      "expected_wrong_payouts": 0.229842,
+      "expected_missed_payouts": 0.050046,
+      "objective": 0.279888,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.187842,
+      "expected_missed_payouts": 0.050725,
+      "objective": 0.238566,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.154922,
+      "expected_missed_payouts": 0.051626,
+      "objective": 0.206548,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.141129,
+      "expected_missed_payouts": 0.052045,
+      "objective": 0.193175,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.128267,
+      "expected_missed_payouts": 0.052257,
+      "objective": 0.180524,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.123335,
+      "expected_missed_payouts": 0.052411,
+      "objective": 0.175745,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.109563,
+      "expected_missed_payouts": 0.053108,
+      "objective": 0.162671,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.104612,
+      "expected_missed_payouts": 0.05357,
+      "objective": 0.158182,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.09246,
+      "expected_missed_payouts": 0.055194,
+      "objective": 0.147654,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.086947,
+      "expected_missed_payouts": 0.056171,
+      "objective": 0.143118,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.082561,
+      "expected_missed_payouts": 0.057236,
+      "objective": 0.139797,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.079549,
+      "expected_missed_payouts": 0.058581,
+      "objective": 0.138131,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.078186,
+      "expected_missed_payouts": 0.058747,
+      "objective": 0.136933,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.077225,
+      "expected_missed_payouts": 0.05994,
+      "objective": 0.137166,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.01,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.076704,
+      "expected_missed_payouts": 0.060455,
+      "objective": 0.137159,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.02,
+      "expected_wrong_payouts": 0.200824,
+      "expected_missed_payouts": 0.053331,
+      "objective": 0.254155,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.15877,
+      "expected_missed_payouts": 0.05401,
+      "objective": 0.21278,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.12581,
+      "expected_missed_payouts": 0.054911,
+      "objective": 0.180721,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.111988,
+      "expected_missed_payouts": 0.055331,
+      "objective": 0.167319,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.09911,
+      "expected_missed_payouts": 0.055543,
+      "objective": 0.154653,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.094171,
+      "expected_missed_payouts": 0.055697,
+      "objective": 0.149868,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.080365,
+      "expected_missed_payouts": 0.056393,
+      "objective": 0.136758,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.075409,
+      "expected_missed_payouts": 0.056856,
+      "objective": 0.132264,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.063237,
+      "expected_missed_payouts": 0.05848,
+      "objective": 0.121717,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.057712,
+      "expected_missed_payouts": 0.059456,
+      "objective": 0.117168,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.053309,
+      "expected_missed_payouts": 0.060522,
+      "objective": 0.113831,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.050287,
+      "expected_missed_payouts": 0.061867,
+      "objective": 0.112154,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.04892,
+      "expected_missed_payouts": 0.062033,
+      "objective": 0.110952,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.047951,
+      "expected_missed_payouts": 0.063226,
+      "objective": 0.111177,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.015,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.04743,
+      "expected_missed_payouts": 0.063741,
+      "objective": 0.11117,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.03,
+      "expected_wrong_payouts": 0.148574,
+      "expected_missed_payouts": 0.05529,
+      "objective": 0.203863,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.115587,
+      "expected_missed_payouts": 0.05619,
+      "objective": 0.171777,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.101754,
+      "expected_missed_payouts": 0.05661,
+      "objective": 0.158364,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.088863,
+      "expected_missed_payouts": 0.056822,
+      "objective": 0.145685,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.083913,
+      "expected_missed_payouts": 0.056976,
+      "objective": 0.140888,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.070078,
+      "expected_missed_payouts": 0.057672,
+      "objective": 0.127751,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.065117,
+      "expected_missed_payouts": 0.058135,
+      "objective": 0.123251,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.052932,
+      "expected_missed_payouts": 0.059759,
+      "objective": 0.112691,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.0474,
+      "expected_missed_payouts": 0.060735,
+      "objective": 0.108135,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.04299,
+      "expected_missed_payouts": 0.061801,
+      "objective": 0.10479,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.03995,
+      "expected_missed_payouts": 0.063146,
+      "objective": 0.103096,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.038581,
+      "expected_missed_payouts": 0.063312,
+      "objective": 0.101893,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.037585,
+      "expected_missed_payouts": 0.064505,
+      "objective": 0.10209,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.02,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.037061,
+      "expected_missed_payouts": 0.06502,
+      "objective": 0.102081,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.04,
+      "expected_wrong_payouts": 0.105456,
+      "expected_missed_payouts": 0.057548,
+      "objective": 0.163004,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.091605,
+      "expected_missed_payouts": 0.057968,
+      "objective": 0.149573,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.078685,
+      "expected_missed_payouts": 0.05818,
+      "objective": 0.136865,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.073719,
+      "expected_missed_payouts": 0.058334,
+      "objective": 0.132053,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.059849,
+      "expected_missed_payouts": 0.059031,
+      "objective": 0.11888,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.054869,
+      "expected_missed_payouts": 0.059493,
+      "objective": 0.114361,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.042645,
+      "expected_missed_payouts": 0.061117,
+      "objective": 0.103762,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.037096,
+      "expected_missed_payouts": 0.062093,
+      "objective": 0.099189,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.032668,
+      "expected_missed_payouts": 0.063159,
+      "objective": 0.095827,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.029616,
+      "expected_missed_payouts": 0.064504,
+      "objective": 0.094121,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.02824,
+      "expected_missed_payouts": 0.06467,
+      "objective": 0.09291,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.0272,
+      "expected_missed_payouts": 0.065863,
+      "objective": 0.093064,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.03,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.026674,
+      "expected_missed_payouts": 0.066378,
+      "objective": 0.093052,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.05,
+      "expected_wrong_payouts": 0.083623,
+      "expected_missed_payouts": 0.05977,
+      "objective": 0.143392,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.07067,
+      "expected_missed_payouts": 0.059981,
+      "objective": 0.130652,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.065699,
+      "expected_missed_payouts": 0.060135,
+      "objective": 0.125834,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.051795,
+      "expected_missed_payouts": 0.060832,
+      "objective": 0.112627,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.046809,
+      "expected_missed_payouts": 0.061294,
+      "objective": 0.108103,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.03455,
+      "expected_missed_payouts": 0.062919,
+      "objective": 0.097469,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.028972,
+      "expected_missed_payouts": 0.063895,
+      "objective": 0.092867,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.024534,
+      "expected_missed_payouts": 0.06496,
+      "objective": 0.089495,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.021474,
+      "expected_missed_payouts": 0.066306,
+      "objective": 0.087779,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.020093,
+      "expected_missed_payouts": 0.066472,
+      "objective": 0.086564,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.019047,
+      "expected_missed_payouts": 0.067665,
+      "objective": 0.086711,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.04,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.018515,
+      "expected_missed_payouts": 0.068179,
+      "objective": 0.086694,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.075,
+      "expected_wrong_payouts": 0.067387,
+      "expected_missed_payouts": 0.060821,
+      "objective": 0.128208,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.062406,
+      "expected_missed_payouts": 0.060975,
+      "objective": 0.123381,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.048478,
+      "expected_missed_payouts": 0.061672,
+      "objective": 0.11015,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.043485,
+      "expected_missed_payouts": 0.062134,
+      "objective": 0.105619,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.0312,
+      "expected_missed_payouts": 0.063758,
+      "objective": 0.094959,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.025616,
+      "expected_missed_payouts": 0.064735,
+      "objective": 0.090351,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.02117,
+      "expected_missed_payouts": 0.0658,
+      "objective": 0.08697,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.018099,
+      "expected_missed_payouts": 0.067145,
+      "objective": 0.085244,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.016706,
+      "expected_missed_payouts": 0.067311,
+      "objective": 0.084017,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.015639,
+      "expected_missed_payouts": 0.068504,
+      "objective": 0.084143,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.05,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.015105,
+      "expected_missed_payouts": 0.069019,
+      "objective": 0.084124,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.1,
+      "expected_wrong_payouts": 0.059474,
+      "expected_missed_payouts": 0.061398,
+      "objective": 0.120872,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.045491,
+      "expected_missed_payouts": 0.062095,
+      "objective": 0.107585,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.040488,
+      "expected_missed_payouts": 0.062557,
+      "objective": 0.103045,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.028163,
+      "expected_missed_payouts": 0.064182,
+      "objective": 0.092344,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.022571,
+      "expected_missed_payouts": 0.065158,
+      "objective": 0.087729,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.018105,
+      "expected_missed_payouts": 0.066223,
+      "objective": 0.084328,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.015001,
+      "expected_missed_payouts": 0.067568,
+      "objective": 0.082569,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.013603,
+      "expected_missed_payouts": 0.067734,
+      "objective": 0.081337,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.01252,
+      "expected_missed_payouts": 0.068928,
+      "objective": 0.081448,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.075,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.011982,
+      "expected_missed_payouts": 0.069442,
+      "objective": 0.081424,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.15,
+      "expected_wrong_payouts": 0.044512,
+      "expected_missed_payouts": 0.062403,
+      "objective": 0.106915,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.039489,
+      "expected_missed_payouts": 0.062865,
+      "objective": 0.102354,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.027135,
+      "expected_missed_payouts": 0.064489,
+      "objective": 0.091624,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.021511,
+      "expected_missed_payouts": 0.065465,
+      "objective": 0.086976,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.017038,
+      "expected_missed_payouts": 0.066531,
+      "objective": 0.083569,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.013904,
+      "expected_missed_payouts": 0.067876,
+      "objective": 0.08178,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.0125,
+      "expected_missed_payouts": 0.068042,
+      "objective": 0.080543,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.011402,
+      "expected_missed_payouts": 0.069235,
+      "objective": 0.080638,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.1,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.010857,
+      "expected_missed_payouts": 0.06975,
+      "objective": 0.080607,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.2,
+      "expected_wrong_payouts": 0.036451,
+      "expected_missed_payouts": 0.064258,
+      "objective": 0.100709,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.024002,
+      "expected_missed_payouts": 0.065883,
+      "objective": 0.089885,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.018351,
+      "expected_missed_payouts": 0.066859,
+      "objective": 0.08521,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.013868,
+      "expected_missed_payouts": 0.067925,
+      "objective": 0.081792,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.010683,
+      "expected_missed_payouts": 0.06927,
+      "objective": 0.079952,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.009257,
+      "expected_missed_payouts": 0.069436,
+      "objective": 0.078693,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.0081,
+      "expected_missed_payouts": 0.070629,
+      "objective": 0.078729,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.15,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.007548,
+      "expected_missed_payouts": 0.071143,
+      "objective": 0.078691,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.3,
+      "expected_wrong_payouts": 0.02312,
+      "expected_missed_payouts": 0.066807,
+      "objective": 0.089927,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.017441,
+      "expected_missed_payouts": 0.067784,
+      "objective": 0.085224,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.012941,
+      "expected_missed_payouts": 0.068849,
+      "objective": 0.08179,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.009706,
+      "expected_missed_payouts": 0.070194,
+      "objective": 0.0799,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.008259,
+      "expected_missed_payouts": 0.07036,
+      "objective": 0.078619,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.007091,
+      "expected_missed_payouts": 0.071553,
+      "objective": 0.078644,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.2,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.00653,
+      "expected_missed_payouts": 0.072068,
+      "objective": 0.078598,
+      "chosen": true
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.4,
+      "expected_wrong_payouts": 0.015006,
+      "expected_missed_payouts": 0.071033,
+      "objective": 0.086039,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.010429,
+      "expected_missed_payouts": 0.072098,
+      "objective": 0.082527,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.007105,
+      "expected_missed_payouts": 0.073443,
+      "objective": 0.080548,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.005597,
+      "expected_missed_payouts": 0.073609,
+      "objective": 0.079207,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.004366,
+      "expected_missed_payouts": 0.074802,
+      "objective": 0.079169,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.3,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.003777,
+      "expected_missed_payouts": 0.075317,
+      "objective": 0.079094,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.4,
+      "theta_hi": 0.5,
+      "expected_wrong_payouts": 0.009438,
+      "expected_missed_payouts": 0.07405,
+      "objective": 0.083489,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.4,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.006046,
+      "expected_missed_payouts": 0.075396,
+      "objective": 0.081441,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.4,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.004524,
+      "expected_missed_payouts": 0.075562,
+      "objective": 0.080086,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.4,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.003233,
+      "expected_missed_payouts": 0.076755,
+      "objective": 0.079988,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.4,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.002607,
+      "expected_missed_payouts": 0.077269,
+      "objective": 0.079876,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.5,
+      "theta_hi": 0.6,
+      "expected_wrong_payouts": 0.005216,
+      "expected_missed_payouts": 0.077527,
+      "objective": 0.082743,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.5,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.00367,
+      "expected_missed_payouts": 0.077693,
+      "objective": 0.081363,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.5,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.002318,
+      "expected_missed_payouts": 0.078886,
+      "objective": 0.081204,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.5,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.001677,
+      "expected_missed_payouts": 0.0794,
+      "objective": 0.081077,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.6,
+      "theta_hi": 0.7,
+      "expected_wrong_payouts": 0.003009,
+      "expected_missed_payouts": 0.080383,
+      "objective": 0.083392,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.6,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.001609,
+      "expected_missed_payouts": 0.081576,
+      "objective": 0.083185,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.6,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.000949,
+      "expected_missed_payouts": 0.082091,
+      "objective": 0.08304,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.7,
+      "theta_hi": 0.8,
+      "expected_wrong_payouts": 0.001449,
+      "expected_missed_payouts": 0.081908,
+      "objective": 0.083357,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.7,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.00076,
+      "expected_missed_payouts": 0.082423,
+      "objective": 0.083182,
+      "chosen": false
+    },
+    {
+      "theta_lo": 0.8,
+      "theta_hi": 0.9,
+      "expected_wrong_payouts": 0.000483,
+      "expected_missed_payouts": 0.084809,
+      "objective": 0.085292,
+      "chosen": false
+    }
+  ],
+  "provenance": {
+    "generated_at": "2026-11-11T23:54:17Z",
+    "git_commit": "5a552e3-dirty",
+    "code": "ml/fourhour_ml/trigger.py, ml/fourhour_ml/build.py:build_trigger_params",
+    "data_sources": [
+      {
+        "name": "EAGLE-I recorded outages 2014 (eaglei_outages_2014.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547717",
+        "sha256": "f292a9f99066ac686df69767c535b218e70b4d4e748840ec620eda3340f914c9",
+        "rows_used": 0
+      },
+      {
+        "name": "EAGLE-I recorded outages 2015 (eaglei_outages_2015.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547822",
+        "sha256": "49de89b3427d564efbd9c80183caf4e9777966f7e319d4b30d682c1c0d064505",
+        "rows_used": 358147
+      },
+      {
+        "name": "EAGLE-I recorded outages 2016 (eaglei_outages_2016.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547825",
+        "sha256": "2c1b364a3b06aee56326174c4644750ea86ba9be4585c5e40eeb7835431bfc9c",
+        "rows_used": 367319
+      },
+      {
+        "name": "EAGLE-I recorded outages 2017 (eaglei_outages_2017.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547828",
+        "sha256": "47479c4fd645ec69685447f90baa51f08a85e776cedf612279b3e41c13147c8d",
+        "rows_used": 351173
+      },
+      {
+        "name": "EAGLE-I recorded outages 2018 (eaglei_outages_2018.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547879",
+        "sha256": "85e0a864aa272e75892e181f1da4754ed78f7bf0bef75a279d8ab381baa7db70",
+        "rows_used": 643332
+      },
+      {
+        "name": "EAGLE-I recorded outages 2019 (eaglei_outages_2019.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547885",
+        "sha256": "4cc277a138b326bd0e1f203558539a9422b40dacdf439e3d5b58ee71d7462d27",
+        "rows_used": 649042
+      },
+      {
+        "name": "EAGLE-I recorded outages 2020 (eaglei_outages_2020.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547894",
+        "sha256": "2a20b62e5245b1b9d4fcedc1bdbaf691bb1e17f75094975c8c6cb854f52e721a",
+        "rows_used": 678942
+      },
+      {
+        "name": "EAGLE-I recorded outages 2021 (eaglei_outages_2021.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547891",
+        "sha256": "e3e7ac40a40d92d92488501881ab381b8931833e486941424ac55ea20ffde319",
+        "rows_used": 700364
+      },
+      {
+        "name": "EAGLE-I recorded outages 2022 (eaglei_outages_2022.csv, filtered to TX/FL/IL)",
+        "url": "https://ndownloader.figshare.com/files/42547897",
+        "sha256": "ff8b58ae30fcbaf290f820bcd4f1420e536994bc9f0a87bb80991130478461b0",
+        "rows_used": 709225
+      },
+      {
+        "name": "EAGLE-I modeled county customers (MCC.csv)",
+        "url": "https://ndownloader.figshare.com/files/42547708",
+        "sha256": "d7fbe0d60ea71273f68bd744408059491fbc7f85b6254882d17783d7762bf65e",
+        "rows_used": 423
+      }
+    ],
+    "train_years": [
+      2014,
+      2022
+    ],
+    "test_years": [
+      2023,
+      2024
+    ],
+    "seed": 20261111,
+    "notes": "Chosen on training years only: 144 fitted county-years (model universe, coverage floor, see data_quality.json), 2014-2022 rows only. Events: runs at or above the threshold, missing gaps up to 120 min and dropout readings (at most 0.1 of the last reading at or above) bridged, a run lasting 4 h or more qualifies, qualifying runs within 72 h merged (CONTRACTS 1.6 section 3). Truth proxy (SPEC 5.5 version 1): a member at a random premises is out 4 h or more in an outage episode with probability equal to the episode's mean share; episodes are qualifying events at the lowest grid value 0.0025. Expected member outages of 4 h or more visible this way: 0.1017 per member-year. Grid values are per member-year in units of one full scheduled payout. No-witness members (share 0.5): R2 pays 50% on theta_hi events; wrong = 0.5 x sum(1 - p_e) over theta_hi events, missed = outages not covered plus half of those covered. Witness members (share 0.5): R1/R3 pay in full when the premises was out and a theta_lo event overlaps; missed = outages with no theta_lo event; wrong = false_confirmation_rate x sum(1 - p_e) over theta_lo events with no theta_hi event (R3). Product parameters set by the humans on 2026-11-12: witness_share 0.5, false_confirmation_rate 0.1, gap_bridge_minutes 120, event_merge_hours 72, dropout_max_fraction 0.1. Result: the minimum is at theta_lo 0.2, theta_hi 0.9 (objective 0.0786). theta_hi_status is grid_edge_no_interior_optimum: theta_hi is the edge of the grid, not a fitted optimum; it was accepted by the humans on 2026-11-12 (CONTRACTS 1.7). Version 1 prices theta_lo events for a member with a registered witness (CONTRACTS 1.7); R2 cost is reported in backtest.json, not priced. theta_hi is at the top of the grid (0.9) and the objective is nearly flat in theta_hi above 0.5 (best objective by theta_hi: 0.3: 0.0899, 0.4: 0.0852, 0.5: 0.0818, 0.6: 0.0799, 0.7: 0.0786, 0.8: 0.0786, 0.9: 0.0786). Never paying on the index alone (no R2) would score 0.0845. Reading: under this proxy an index-only payment is wrong for most members at almost any threshold, because the mean share during an event is small; R2 (50% with no witness) is the source of most wrong payouts. Sensitivity of the chosen pair (witness_share x false_confirmation_rate -> theta_lo, theta_hi): 0.25 x 0.05 -> 0.15, 0.9; 0.25 x 0.1 -> 0.2, 0.9; 0.25 x 0.2 -> 0.4, 0.9; 0.5 x 0.05 -> 0.15, 0.9; 0.5 x 0.1 -> 0.2, 0.9; 0.5 x 0.2 -> 0.4, 0.7; 0.75 x 0.05 -> 0.15, 0.7; 0.75 x 0.1 -> 0.2, 0.7; 0.75 x 0.2 -> 0.3, 0.4. R3 exposure (theta_lo events without a theta_hi event, per county-year in training): 0.1806 (difference of event rates; not priced in version 1). Per-threshold training quantities (events per county-year): 0.0025: 6.292, 0.005: 3.285, 0.0075: 2.125, 0.01: 1.653, 0.015: 1.062, 0.02: 0.854, 0.03: 0.646, 0.04: 0.479, 0.05: 0.410, 0.075: 0.347, 0.1: 0.326, 0.15: 0.257, 0.2: 0.236, 0.3: 0.174, 0.4: 0.146, 0.5: 0.118, 0.6: 0.090, 0.7: 0.083, 0.8: 0.062, 0.9: 0.056."
+  }
+}

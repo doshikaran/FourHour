@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from fourhour_ml.eaglei import SchemaError, filter_year_to_parquet, load_mcc, read_parquet
-from fourhour_ml.esmi import district_eligibility, premises_per_district, read_location_days
+from fourhour_ml.esmi import ESMIError, check_date_format, concurrency, eligibility, norm
 
 
 @pytest.mark.parametrize(
@@ -51,23 +51,34 @@ def test_mcc_bom_and_zero_padding(tmp_path):
     assert m["fips"].tolist() == ["01001", "48201"]
 
 
-def test_esmi_district_helpers(tmp_path):
+def test_esmi_day_first_confirmed():
+    st = check_date_format(pd.Series(["31-10-2014", "01-11-2014"]), "%d-%m-%Y", "f")
+    assert st["first_above_12"] == 1 and st["second_above_12"] == 0
+
+
+def test_esmi_month_first_confirmed_and_value_errors_counted():
+    st = check_date_format(pd.Series(["7/1/2019", "7/31/2019", "#VALUE!"]), "%m/%d/%Y", "f")
+    assert st["second_above_12"] == 1 and st["unparseable_cells"] == 1
+
+
+def test_esmi_wrong_format_fails_loudly():
+    with pytest.raises(ESMIError):
+        check_date_format(pd.Series(["7/1/2019", "7/31/2019"]), "%d-%m-%Y", "f")
+    with pytest.raises(ESMIError):
+        check_date_format(pd.Series(["31-10-2014"]), "%m-%d-%Y", "f")
+    with pytest.raises(ESMIError):  # no row can tell day from month: not confirmed
+        check_date_format(pd.Series(["01-02-2015"]), "%d-%m-%Y", "f")
+
+
+def test_esmi_names_normalised():
+    assert norm(pd.Series(["Chandauli ", " Chandauli", "Bengaluru  Urban"])).tolist() == ["Chandauli", "Chandauli", "Bengaluru Urban"]
+
+
+def test_esmi_eligibility_counts_concurrent_hours():
     loc = pd.DataFrame({"Location name": ["a", "b", "c"], "District": ["D1", "D1", "D2"], "State": ["S", "S", "S"]})
-    assert premises_per_district(loc).to_dict("records") == [
-        {"State": "S", "District": "D1", "premises": 2}, {"State": "S", "District": "D2", "premises": 1}]
-    dates = ["2015-01-01", "2015-01-02", "2015-01-03", "2015-01-04"]
-    days = pd.DataFrame({"Location name": ["a"] * 4 + ["b"] * 4 + ["c", "c"],
-                         "Date": pd.to_datetime(dates + dates + ["2015-01-03", "2015-01-04"])})
-    from fourhour_ml.esmi import daily_active_per_district
-    daily = daily_active_per_district(days, loc)
-    elig = district_eligibility(daily, pd.Timestamp("2015-01-03"), min_median_active=1).set_index("District")
-    assert elig.loc["D1", "median_active_first_half"] == 2 and elig.loc["D1", "passes"]
-    # D2 has no monitor in the first half: days without data count as zero, so it fails.
-    assert elig.loc["D2", "median_active_first_half"] == 0 and not elig.loc["D2", "passes"]
-
-
-def test_esmi_voltage_dates_are_not_guessed(tmp_path):
-    p = tmp_path / "ESMI minute-wise voltage data x.tab"
-    p.write_text("Location name\tDate\tHour\tMin 0\na\t2015-01-02\t0\t230\na\t02/01/2015\t1\t0\n")
-    d = read_location_days(p)
-    assert d["Date"].notna().sum() == 1 and d["Date"].isna().sum() == 1
+    t = pd.to_datetime(["2015-01-01 00:00", "2015-01-01 01:00", "2015-01-03 00:00"])
+    act = pd.DataFrame({"loc": ["a", "a", "a", "b", "b", "b", "c"], "t": list(t) + list(t) + [t[2]]})
+    conc = concurrency(act, loc)
+    el = eligibility(conc, pd.Timestamp("2015-01-02"), cutoff=2, min_hours=1).set_index("District")
+    assert el.loc["D1", "hours_ok_first_half"] == 2 and el.loc["D1", "hours_ok_second_half"] == 1 and el.loc["D1", "passes"]
+    assert not el.loc["D2", "passes"]

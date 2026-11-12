@@ -1,0 +1,3 @@
+# Scenario files are derived slices of EAGLE-I. Until task S6 (licences) is resolved they
+# stay out of git. Rebuild with: cd ml && .venv/bin/python build_artifacts.py scenarios
+scenarios/
