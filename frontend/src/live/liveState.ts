@@ -340,7 +340,7 @@ export function liveReducer(state: LiveState, action: LiveAction): LiveState {
           simTime: ev.data.sim_time,
           icon: c.decision === 'paid' ? '✓' : c.decision === 'declined' ? '✕' : '!',
           tone: c.decision === 'paid' ? 'good' : c.decision === 'declined' ? 'neutral' : 'warn',
-          text: `Claim ${verb} under ${c.rule} (${c.tier === 't4' ? '4-hour tier' : '24-hour top-up'}). ${c.reason}`,
+          text: `Claim ${verb} under ${c.rule} (${c.tier === 't4' ? '4-hour tier' : '24-hour tier'}). ${c.reason}`,
         },
       );
     }

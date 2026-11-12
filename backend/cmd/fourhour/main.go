@@ -93,6 +93,7 @@ func run(ctx context.Context, args []string, lookup config.LookupFunc, logOut io
 	if err := svc.ResumePayouts(ctx); err != nil {
 		log.Error("resume payouts", "err", err)
 	}
+	startupDemo(ctx, cfg, svc, log)
 
 	reqCtx, cancelReqs := context.WithCancel(context.Background())
 	defer cancelReqs()
@@ -134,6 +135,29 @@ func run(ctx context.Context, args []string, lookup config.LookupFunc, logOut io
 		return fmt.Errorf("serve: %w", err)
 	}
 	return nil
+}
+
+// startupDemo creates the demo policy and charges its first premium when
+// DEMO_VAULT_TOKEN is set (CONTRACTS.md section 3, "Demo policy"). Every
+// failure is logged, with the PayPal debug_id when there is one, and never
+// stops the server. On a new database this makes a real sandbox charge.
+func startupDemo(ctx context.Context, cfg config.Config, svc *service.Service, log *slog.Logger) {
+	if cfg.DemoVaultToken == "" {
+		return
+	}
+	dctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	res, err := svc.EnsureDemoPolicy(dctx, service.DemoInput{MemberEmail: cfg.SandboxMemberEmail, PayoutEmail: cfg.SandboxPayoutEmail, VaultToken: cfg.DemoVaultToken})
+	if res.Policy.ID != "" {
+		attrs := []any{"policy_id", res.Policy.ID, "created", res.Created, "fips", res.Policy.FIPS, "cover_cents", res.Policy.CoverCents, "premium_cents", res.Policy.PremiumCents, "model_version", res.Policy.ModelVersion}
+		if res.Charge != nil {
+			attrs = append(attrs, "charge_id", res.Charge.ID, "period", res.Charge.Period, "charge_status", res.Charge.Status)
+		}
+		log.Info("demo policy", attrs...)
+	}
+	if err != nil {
+		log.Error("demo policy failed; the server continues", "err", err, "paypal_debug_id", service.ErrDebugID(err))
+	}
 }
 
 // newPayPal builds the PayPal client, or returns nil (with a warning) when

@@ -87,7 +87,7 @@ Headers were read from each file: 2024 in full, and the other years from their f
 * The 2024 file publishes explicit zero rows. A missing 2024 row is a scrape gap, not a zero. SPEC 5.1 says zeros are not recorded; that is still to be checked for 2014-2023.
 * The timezone of `run_start_time` is not stated in the figshare metadata. Times are kept as published.
 * Denominators disagree. For Harris, MCC gives 1,827,686 and the 2024 `total_customers` gives 1,344,930. In 81 Harris rows, `customers_out` is above `total_customers` (peak 1,660,703). The code uses MCC.
-* The big utility's feed drops out during large events. The county count falls from about 1.1M to about 2,300 for 45-75 minutes, then returns. The 30-minute bridge does not cover this, so Hurricane Beryl reconstructs as two events. See the S3 output and the lead's open question.
+* The big utility's feed drops out during large events. The county count falls from about 1.1M to about 2,300 for 45-75 minutes, then returns. This was found with the original 30-minute bridge, which split Hurricane Beryl into two events. It is now handled by the 120-minute gap bridge, the dropout rule and the 72 h hours clause (see Event reconstruction rules below; CONTRACTS 1.6 section 3). `data_quality.json` reports how many large events the current rules still split.
 
 ## ESMI (India)
 
@@ -135,18 +135,24 @@ returned HTTP 403. The Dataverse page returned an empty bot-check response (HTTP
 
 | Module | What it does |
 |---|---|
-| `fourhour_ml/config.py` | Paths, `TRAIN_YEARS=(2014,2022)`, `TEST_YEARS=(2023,2024)`, `SEED=20261111`, demo counties, `GAP_BRIDGE_MINUTES=30` |
+| `fourhour_ml/config.py` | Paths, `TRAIN_YEARS=(2014,2022)`, `TEST_YEARS=(2023,2024)`, `SEED=20261111`, demo counties, `GAP_BRIDGE_MINUTES=120`, `EVENT_MERGE_HOURS=72`, `DROPOUT_MAX_FRACTION=0.1` |
 | `fourhour_ml/split.py` | `split_by_year` (the only split), `@train_only` guard, `LeakageError` |
 | `fourhour_ml/eaglei.py` | File registry, streaming reader, header normalisation, state filter, MCC loader |
 | `fourhour_ml/fetch.py` | Resumable, MD5-verified download; per-year filter + manifest |
 | `fourhour_ml/events.py` | Event reconstruction (SPEC 5.1), interval coverage, missing-data runs |
-| `fourhour_ml/esmi.py` | ESMI readers and per-district counts (not yet run on real files) |
+| `fourhour_ml/esmi.py` | ESMI readers and per-district counts (basis-risk study, `basis.py`) |
 | `fourhour_ml/schema.py` | Artifact schema check, `make_provenance`, `write_artifact` (validates first; writes nothing on failure) |
 | `download.py` | CLI for the downloads |
 
 ### Event reconstruction rules (`events.py`)
 
-Each row at time `t` covers `[t, t+15m)`, and `share = customers_out / MCC customers`. An interval is above when `share >= threshold`. Missing and null rows are never above. Above intervals merge when the gap between them is 30 minutes or less, whether the gap is below-threshold rows, missing rows, or both. The gap time counts in the duration, and each event reports how many intervals it bridged of each kind. `end = last above t + 15m`.
+The full definitions are in the `events.py` docstring. In short:
+
+* `share = min(customers_out / MCC customers, 1.0)`. A reading is at or above when `share >= threshold`. Missing rows and null `customers_out` are unknown: never zero, never above.
+* **Run:** consecutive readings at or above. Missing intervals of up to 120 minutes (`GAP_BRIDGE_MINUTES`) between two such readings are bridged and stay in the run. An observed below reading, or a longer gap, ends the run.
+* **Dropout rule:** a below reading that is at most 0.1 (`DROPOUT_MAX_FRACTION`) of the last reading at or above, with any such readings straight after it, is treated as missing when the next remaining reading is at or above and the gap it leaves is bridgeable. This covers the partial-feed drops seen in large events. Otherwise it is an ordinary below reading.
+* **Duration:** last reading at or above minus the first, bridged gaps included. A run qualifies at 4 h.
+* **Hours clause:** a qualifying run that starts within 72 h (`EVENT_MERGE_HOURS`) of the end of the previous qualifying run in the same county joins its event. Non-qualifying runs never merge. Durations are per run and never summed; `longest_run_hours` drives severity and tiers.
 
 ### Split guard
 
@@ -164,4 +170,18 @@ Where section 8 describes contents without naming keys, the check enforces only 
 
 ## Regenerating artifacts
 
-Not yet. There is no artifact-generating code in Gate 1. The single command will be documented here when phase 4 adds it.
+One command, from `ml/` (Windows venv layout shown; on Linux or macOS use `.venv/bin/python`):
+
+```
+.venv/Scripts/python download.py && .venv/Scripts/python build_artifacts.py
+```
+
+`download.py` verifies the raw EAGLE-I files in `data/raw/eaglei/` against the published MD5s (downloading any that are missing) and filters them to the Texas, Florida and Illinois Parquet slices in `data/derived/eaglei/`. `build_artifacts.py` then builds every artifact (`data_quality`, `trigger_params`, `pricing_table`, `solvency`, `backtest`, `scenarios`, `basis_risk`), validates each against CONTRACTS.md section 8 and writes it to `artifacts/`; a file that fails the check is not written and the command exits 1. Stages can be run alone, e.g. `build_artifacts.py scenarios`. The ESMI files must already be in `data/raw/esmi/`.
+
+Run time, measured on 2026-11-12 on the Windows 11 build machine with the raw files already downloaded: 450 s in all (download.py 119 s re-verifying and filtering 2014-2024, build_artifacts.py 331 s, of which basis_risk takes 243 s). Downloading the raw data adds about 9.6 GB (EAGLE-I) and 2.1 GB (ESMI).
+
+`provenance.git_commit` is the short commit hash, with `-dirty` when `ml/` has uncommitted changes. Build from a clean checkout of `ml/` so the artifacts name a real commit.
+
+### S4 evidence (ESMI)
+
+From `artifacts/basis_risk.json` (commit e9fbacd): 8 ESMI districts used (`districts_used`), each with a median of at least 8 active monitors (`min_active_monitors = 8`). Fit period 2014-10-22 to 2016-11-24, scored on 2016-11-25 to 2018-12-31.

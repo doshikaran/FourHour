@@ -73,15 +73,22 @@ def test_esmi_thresholds_use_first_half_only():
 
 
 def test_premium_formula_rounds_half_up_once():
-    c = {"expected_events_per_year": 0.25, "prob_24h_given_event": 0.5, "prob_premises_affected": 0.4}
-    # 0.25 * (0.6 + 0.4*0.5) * 0.4 * 15000 = 1200 per year -> 100/month * 1.5 + 100 = 250
-    assert build.expected_annual_payout_cents(c, 15000) == Decimal("1200.000")
-    assert build.premium_cents(c, 15000, 0.5, 100) == 250
+    c = {"expected_events_per_year": 0.25, "prob_premises_affected": 0.4}
+    # CONTRACTS 1.8: expected payout share is t4 only.
+    # 0.25 * 0.6 * 0.4 * 15000 = 900 per year -> 75/month * 1.5 + 100 = 212.5 -> 213 (half up)
+    assert build.expected_annual_payout_cents(c, 15000) == Decimal("900.00")
+    assert build.premium_cents(c, 15000, 0.5, 100) == 213
+
+
+def test_premium_ignores_24h_probability():
+    a = {"expected_events_per_year": 0.25, "prob_premises_affected": 0.4}
+    b = dict(a, prob_24h_given_event=0.9)
+    assert build.expected_annual_payout_cents(a, 15000) == build.expected_annual_payout_cents(b, 15000)
 
 
 def test_simulated_payouts_are_integer_cents_and_round_down():
     rng = np.random.default_rng(0)
     ev = pd.DataFrame({"mean_share": [1.0], "qualifies_t24": [True]})
     total, claims = models.simulate_year_payouts(rng, ev, np.array([5001]))
-    # t4: floor(5001*0.6) = 3000; top-up: 5001 - 3000 = 2001
-    assert total == 5001 and claims == 2
+    # t4 only (CONTRACTS 1.8): floor(5001 * 0.6) = 3000; a 24-hour event gets no top-up
+    assert total == 3000 and claims == 1

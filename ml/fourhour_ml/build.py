@@ -106,6 +106,86 @@ def _low_start(df24: pd.DataFrame) -> str:
     return str(start.date()) if start is not None else "none"
 
 
+def _longest_run_hours(t_ns: np.ndarray, share: np.ndarray, theta: float, dropout_max_fraction: float | None) -> float:
+    from .events import dropout_mask, find_runs
+
+    if t_ns.size == 0:
+        return 0.0
+    keep = dropout_mask(t_ns, share, theta, GAP_BRIDGE_MINUTES, dropout_max_fraction)
+    r = find_runs(t_ns[keep], share[keep], theta, GAP_BRIDGE_MINUTES)
+    return float((r["end_ns"] - r["start_ns"]).max() / 3.6e12) if r["i0"].size else 0.0
+
+
+HARRIS_URI_WINDOW = (pd.Timestamp("2021-02-14"), pd.Timestamp("2021-02-21"))  # Winter Storm Uri, a training year
+
+
+def harris_training_finding() -> dict:
+    """Why the historical-mean baseline predicts no Harris events: Harris's own training years
+    (2014-2022 only) at theta_lo, with and without the dropout rule, and the Uri window."""
+    fips = "48201"
+    theta, _ = chosen_thresholds()
+    cov = coverage()
+    n = float(panel.county_customers()[fips])
+    per_year = []
+    for y in TRAIN:
+        g = panel.readings((y,))
+        g = g[g["fips"] == fips].sort_values("t")
+        t_ns = g["t"].to_numpy("datetime64[ns]").astype(np.int64)
+        sh = np.minimum(g["customers_out"].to_numpy(float) / n, 1.0)
+        c = cov[(cov["fips"] == fips) & (cov["year"] == y)].iloc[0]
+        per_year.append(
+            {
+                "year": y,
+                "coverage": float(c.coverage_share),
+                "excluded": bool(c.excluded_from_fitting),
+                "max_share": float(sh.max()) if sh.size else 0.0,
+                "run_dropout": _longest_run_hours(t_ns, sh, theta, DROPOUT_MAX_FRACTION),
+                "run_plain": _longest_run_hours(t_ns, sh, theta, None),
+            }
+        )
+    a, b = HARRIS_URI_WINDOW
+    w = panel.readings((a.year,))
+    w = w[(w["fips"] == fips) & (w["t"] >= a) & (w["t"] < b)].set_index("t")["customers_out"]
+    expected = int((b - a) / pd.Timedelta(minutes=15))
+    peak_t = w.idxmax()
+    uri_above = int((w / n >= theta).sum())
+    near = 0.8 * theta
+    uri_near_h = float((w / n >= near).sum()) * 0.25
+    used = [p for p in per_year if not p["excluded"]]
+    excl = [p for p in per_year if p["excluded"]]
+    any_used_4h = any(max(p["run_dropout"], p["run_plain"]) >= QUALIFY_HOURS for p in used)
+    any_excl_4h = any(max(p["run_dropout"], p["run_plain"]) >= QUALIFY_HOURS for p in excl)
+    best = max(used, key=lambda p: max(p["run_dropout"], p["run_plain"])) if used else None
+    yrs = "; ".join(
+        f"{p['year']}: coverage {p['coverage']:.3f}{' (excluded by the coverage floor)' if p['excluded'] else ''}, max share {p['max_share']:.4f}, longest run at or above {theta} {p['run_dropout']:.2f} h with the dropout rule and {p['run_plain']:.2f} h without"
+        for p in per_year
+    )
+    if any_used_4h:
+        verdict = "Harris has a qualifying run in a fitted training year; the zero-event result is not explained by the data and needs a code check."
+    elif any_excl_4h:
+        verdict = "The only Harris qualifying runs are in county-years excluded by the coverage floor, so the exclusion removes them."
+    elif best is not None:
+        verdict = (
+            f"The feed has usable Harris data in {len(used)} fitted training years, and in none of them does the share stay at or above {theta} for {QUALIFY_HOURS} continuous hours; "
+            f"the closest is {best['year']} ({max(best['run_dropout'], best['run_plain']):.2f} h). The dropout rule, gap bridging and coverage exclusion did not remove an event: "
+            + (
+                "the dropout rule lengthens the longest run rather than shortening it"
+                if all(p["run_dropout"] >= p["run_plain"] for p in per_year)
+                else "no year's longest run reaches 4 hours with or without the dropout rule"
+            )
+            + (f", and the excluded years never reach a share of {theta}." if all(p["max_share"] < theta for p in excl) else ".")
+        )
+    else:
+        verdict = "Harris has no fitted training year."
+    text = (
+        f"Harris County (48201) has no theta_lo ({theta}) qualifying event in its 2014-2022 training years, which is why the historical-mean baseline predicts 0 for it. "
+        f"{verdict} Winter Storm Uri window {a.date()} to {(b - pd.Timedelta(days=1)).date()}: {int(w.notna().sum())} of {expected} intervals present, peak {int(w.max()):,} customers out "
+        f"({w.max() / n:.4f} of {int(n):,}) at {iso(peak_t)}, and only {uri_above} readings at or above {theta}, against {uri_near_h:.2f} hours of readings at or above {near:.2f}: the share hovers near {theta} but keeps dipping below it. "
+        f"Per year: {yrs}. Checked on training years only; no threshold or rule was changed."
+    )
+    return {"id": "harris-training-years", "finding": text}
+
+
 def build_data_quality() -> dict:
     cov = coverage()
     ys = panel.year_stats()
@@ -222,6 +302,7 @@ def build_data_quality() -> dict:
     pooled = cov[cov["year"] >= 2015].groupby("fips")[["intervals_present", "expected_intervals"]].sum()
     county_coverage = {f: {"data_coverage": r6(r.intervals_present / r.expected_intervals)} for f, r in pooled.iterrows()}
 
+    harris = harris_training_finding()
     d3 = cov[cov["intervals_over_county_customers"] > 0]
     u = cov[cov["in_model_universe"]].drop_duplicates("fips")
     excl = cov[cov["excluded_from_fitting"]]
@@ -243,6 +324,7 @@ def build_data_quality() -> dict:
             f"D1 gap evidence (training years, fitted county-years; large event = share at or above 1% traced with a 24-hour bridge, peak 5% or more, 4 h or more). Without the dropout rule: {gap_summary(ev_before)}. With the dropout rule (production, the values in gap_bridge_evidence): {gap_summary(ev_after)}.",
             f"Dropout-like episodes in the same county-years (a reading falling by 90% or more from a reading at 1% share or more, back to half the level within 2 h): {len(drop)}, median {drop.median():.0f} min, max {drop.max():.0f} min.",
             f"county_coverage.data_coverage is the pooled coverage_share over 2015-2024.",
+            "Finding harris-training-years: " + harris["finding"],
         ]
     )
     sources = panel.data_source_entries(panel.ALL_YEARS, {s["year"]: s["rows"] for s in ys})
@@ -254,6 +336,7 @@ def build_data_quality() -> dict:
         "storm_windows": storms,
         "timestamp_check": timestamp_check,
         "county_coverage": county_coverage,
+        "findings": [harris],
         "provenance": make_provenance("ml/fourhour_ml/build.py:build_data_quality", sources, notes),
     }
 
@@ -436,24 +519,50 @@ def _variant_doc(v: dict) -> dict:
     }
 
 
+def not_offered_reason(fips: str) -> str | None:
+    """SPEC 5.5 / CONTRACTS 1.8: a county is not offered when its priced expected loss is zero
+    because no theta_lo qualifying event exists in its credibility group (its state's
+    model-universe counties) in the fitted training years. Returns one sentence, or None."""
+    mr = model_run()
+    cred = mr["credibility"]["table"]
+    row = cred.loc[fips]
+    if float(12 * row["blended"]) * mr["p_affected"] > 0:
+        return None
+    group = cred[cred["state"] == row["state"]]
+    names = coverage().drop_duplicates("fips").set_index("fips")["county"]
+    members = ", ".join(sorted(str(names[f]) for f in group.index))
+    if int(group["ev"].sum()) == 0:
+        return (
+            f"No outage reached {mr['theta_lo']:.0%} of customers for 4 hours in its pricing group "
+            f"({row['state']} counties with usable data: {members}) in the 2014-2022 data, so there is no history to set a price from."
+        )
+    return "The priced expected loss is zero, so no price can be set from the 2014-2022 data."
+
+
 def pricing_components() -> dict:
     mr = model_run()
     cred = mr["credibility"]["table"]
-    sev = mr["severity"]
     comps = {}
     for fips in DEMO_COUNTIES:
         row = cred.loc[fips]
+        reason = not_offered_reason(fips)
         comps[fips] = {
             "expected_events_per_year": float(12 * row["blended"]),
-            "prob_24h_given_event": sev["p24_fitted"],
             "prob_premises_affected": mr["p_affected"],
             "credibility_weight": float(row["Z"]),
+            "offered": reason is None,
+            "not_offered_reason": reason,
         }
     return comps
 
 
+def offered_counties() -> list[str]:
+    return [f for f, c in pricing_components().items() if c["offered"]]
+
+
 def expected_annual_payout_cents(c: dict, cover: int) -> Decimal:
-    share = Decimal(str(PAYOUT_SCHEDULE["t4"])) + (Decimal(str(PAYOUT_SCHEDULE["t24"])) - Decimal(str(PAYOUT_SCHEDULE["t4"]))) * Decimal(repr(c["prob_24h_given_event"]))
+    """SPEC 5.5, CONTRACTS 1.8: expected payout share = t4, the only tier paid."""
+    share = Decimal(str(PAYOUT_SCHEDULE["t4"]))
     return Decimal(repr(c["expected_events_per_year"])) * share * Decimal(repr(c["prob_premises_affected"])) * cover
 
 
@@ -464,8 +573,9 @@ def premium_cents(c: dict, cover: int, margin: float, expense: int) -> int:
 
 
 def pool_members() -> pd.DataFrame:
-    """Simulated pool: POOL_MEMBERS split evenly over the demo counties, covers in turn."""
-    fips = list(DEMO_COUNTIES)
+    """Simulated pool: POOL_MEMBERS split evenly over the offered demo counties, covers in
+    turn. A county that is not offered (CONTRACTS 1.8) has no quote, so it has no members."""
+    fips = offered_counties()
     rows = [(fips[i % len(fips)], COVERS_CENTS[(i // len(fips)) % len(COVERS_CENTS)]) for i in range(POOL_MEMBERS)]
     return pd.DataFrame(rows, columns=["fips", "cover_cents"])
 
@@ -499,7 +609,7 @@ def premiums_table() -> dict:
     margin = solvency_run()["margin"]
     if margin is None or EXPENSE_LOAD_CENTS is None:
         return {}
-    return {f: {cov: premium_cents(c, cov, margin, EXPENSE_LOAD_CENTS) for cov in COVERS_CENTS} for f, c in comps.items()}
+    return {f: {cov: premium_cents(c, cov, margin, EXPENSE_LOAD_CENTS) for cov in COVERS_CENTS} for f, c in comps.items() if c["offered"]}
 
 
 def model_version() -> str:
@@ -530,10 +640,13 @@ def build_pricing_table() -> dict:
             + "). Training theta_lo events per demo county: "
             + ", ".join(f"{DEMO_COUNTIES[f]}: {int((ev['fips'] == f).sum())}" for f in DEMO_COUNTIES)
             + ".",
-            f"prob_24h_given_event: generalised Pareto fitted to the excess of the longest run over 4 h, pooled over all {sev['n']} training events (empirical share {sev['p24_empirical']:.4f}); the same for every county.",
+            f"Expected payout share = t4 {PAYOUT_SCHEDULE['t4']}, the only tier paid (CONTRACTS 1.8: the 24-hour tier was cut on 2026-11-12 and is neither paid nor priced). P(24 h | event) stays in backtest.json severity as a report (fitted {sev['p24_fitted']:.4f}, {sev['n']} training events).",
             f"prob_premises_affected: SPEC 5.5 version 1, the mean share of customers out during training event windows, pooled over all training events ({len(ev)}); the same for every county.",
             f"risk_margin_rate = cost of capital {COST_OF_CAPITAL_RATE} x (1-in-200 simulated annual pool loss - mean loss) / mean loss = {COST_OF_CAPITAL_RATE} x ({sr['var995']:.0f} - {sr['mean']:.0f}) / {sr['mean']:.0f} (solvency.json). expense_load_cents {EXPENSE_LOAD_CENTS} per member per month.",
-            f"Product parameters set by the humans on {PRODUCT_PARAMS_SET_ON}: expense_load_cents {EXPENSE_LOAD_CENTS}, cost of capital {COST_OF_CAPITAL_RATE}, payout_schedule t4 {PAYOUT_SCHEDULE['t4']} / t24 {PAYOUT_SCHEDULE['t24']} (the 60/40 split is a product assumption).",
+            f"Product parameters set by the humans on {PRODUCT_PARAMS_SET_ON}: expense_load_cents {EXPENSE_LOAD_CENTS}, cost of capital {COST_OF_CAPITAL_RATE}, payout_schedule t4 {PAYOUT_SCHEDULE['t4']} (60% of cover is a product assumption).",
+            "Offered (SPEC 5.5, CONTRACTS 1.8): a county is not offered when its priced expected loss is zero because no theta_lo qualifying event exists in its credibility group (its state's model-universe counties) in the fitted training years. "
+            + "; ".join(f"{DEMO_COUNTIES[f]}: " + ("offered" if c["offered"] else "not offered. " + c["not_offered_reason"]) for f, c in comps.items())
+            + " Not-offered counties have no premium and stay in backtest.json and data_quality.json.",
             "Premiums this table gives under the CONTRACTS section 4 formula (cents per month, cover 5000/15000/30000): "
             + "; ".join(f"{DEMO_COUNTIES[f]}: {', '.join(str(prem[f][c]) for c in COVERS_CENTS)}" for f in prem)
             + ".",
@@ -542,7 +655,7 @@ def build_pricing_table() -> dict:
     )
     return {
         "model_version": model_version(),
-        "counties": {f: {k: r6(x) for k, x in c.items()} for f, c in comps.items()},
+        "counties": {f: {k: (x if isinstance(x, (bool, str)) or x is None else r6(x)) for k, x in c.items()} for f, c in comps.items()},
         "rates": {"risk_margin_rate": r6(sr["margin"]), "expense_load_cents": EXPENSE_LOAD_CENTS},
         "payout_schedule": dict(PAYOUT_SCHEDULE),
         "provenance": make_provenance("ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_pricing_table", panel.data_source_entries(TRAIN, prim["rows"]), notes),
@@ -567,11 +680,27 @@ def build_solvency() -> dict:
     lim = max(0, exh - att)
     layer = np.clip(L - att, 0, lim)
     price = int(np.ceil(layer.mean() * (1 + margin))) if margin is not None else None
+    ev = model_run()["variants"]["exclude_low_coverage"]["events"]
+    offered = offered_counties()
+    not_off = [DEMO_COUNTIES[f] for f in DEMO_COUNTIES if f not in offered]
+    # What the simulation really does: no capital at the start of each simulated year; ruin is
+    # a year whose payouts exceed that year's premium income net of the expense load.
+    capital_assumption = {
+        "initial_capital_cents": 0,
+        "description": (
+            f"The pool starts each simulated year with no capital: only that year's premiums net of the expense load ({risk_income} cents) are available to pay claims. "
+            "Ruin is a simulated year whose payouts exceed that premium income."
+        ),
+    }
     notes = " ".join(
         [
-            f"Simulated pool: {POOL_MEMBERS} members split evenly over Harris, Miami-Dade and Cook, covers $50/$150/$300 in turn, every member with a witness (the priced case). Members and their losses are simulated; the outage events are real.",
+            f"Simulated pool: {POOL_MEMBERS} members split evenly over the offered demo counties ({', '.join(DEMO_COUNTIES[f] for f in offered)}), covers $50/$150/$300 in turn, every member with a witness (the priced case). Members and their losses are simulated; the outage events are real."
+            + (f" Not offered, so no members: {', '.join(not_off)} (pricing_table.json)." if not_off else ""),
+            f"Payouts: the 4-hour tier only, {PAYOUT_SCHEDULE['t4']:.0%} of cover per affected member per event, rounded down to a cent (CONTRACTS 1.8: no 24-hour top-up).",
             f"{N_SIMULATIONS} simulated years, seed {SEED}. For each county, a whole fitted training year (2014-2022, coverage floor) is drawn at random and its real theta_lo events replayed, so one event hits every member in the county at once. Each member is affected by an event with probability equal to the event's mean share (SPEC 5.5 version 1).",
-            "Harris and Cook have no theta_lo qualifying event in their fitted training years, so their simulated losses are zero; nearly all simulated loss comes from Miami-Dade. Their premiums still carry a non-zero event rate from credibility with the state rate (pricing_table.json), so the simulation and the pricing disagree for those counties; this is a limit of resampling a county's own history with so few events.",
+            "Training theta_lo qualifying events in the fitted years per demo county: "
+            + ", ".join(f"{DEMO_COUNTIES[f]} {int((ev['fips'] == f).sum())}" for f in DEMO_COUNTIES)
+            + ". A county with none has zero simulated loss, while an offered county's premium can still carry a non-zero rate from credibility with its state rate (pricing_table.json), so simulation and pricing disagree for it; this is a limit of resampling a county's own history with so few events.",
             f"Annual risk income = 12 x (premium - expense load) summed over members = {risk_income} cents. ruin_probability = share of simulated years whose payouts exceed that income with no other capital. capital_1_in_200_cents = 99.5th percentile loss - risk income (0 if negative).",
             f"Aggregate stop-loss layer: attaches at the {STOP_LOSS_ATTACH_Q:.0%} annual loss and exhausts at the {STOP_LOSS_EXHAUST_Q:.1%} loss; price = expected layer loss x (1 + risk_margin_rate {margin:.4f}).",
             f"Mean simulated annual loss {L.mean():.0f} cents; share of simulated years with no payout {(L == 0).mean():.4f}.",
@@ -581,6 +710,7 @@ def build_solvency() -> dict:
     return {
         "members": POOL_MEMBERS,
         "simulations": N_SIMULATIONS,
+        "capital_assumption": capital_assumption,
         "ruin_probability": r6(ruin),
         "capital_1_in_200_cents": capital,
         "stop_loss": {"attachment_cents": att, "limit_cents": lim, "price_cents": price},
@@ -595,9 +725,9 @@ def _r2_multiplier() -> dict:
     mr = model_run()
     prim = mr["variants"]["exclude_low_coverage"]
     n_cy = len(prim["county_years"])
-    sev_share = PAYOUT_SCHEDULE["t4"] + (PAYOUT_SCHEDULE["t24"] - PAYOUT_SCHEDULE["t4"]) * mr["severity"]["p24_fitted"]
+    sev_share = PAYOUT_SCHEDULE["t4"]  # CONTRACTS 1.8: 4-hour tier only
     hi = prim["events_hi"]
-    hi_share = float(models.payout_share(hi["qualifies_t24"].to_numpy(bool)).mean()) if len(hi) else 0.0
+    hi_share = float(models.payout_share(len(hi)).mean()) if len(hi) else 0.0
     r_lo = len(prim["events"]) / n_cy
     r_hi = len(hi) / n_cy
     wit = r_lo * sev_share * mr["p_affected"]
@@ -628,9 +758,9 @@ def build_backtest() -> dict:
             pay += p
             claims += c
             eh = test_hi[(test_hi["fips"] == f) & (test_hi["start"].dt.year == y)]
-            for t24 in eh["qualifies_t24"].to_numpy(bool):
-                share = PAYOUT_SCHEDULE["t24"] if t24 else PAYOUT_SCHEDULE["t4"]
-                r2 += int(sum((int(cv * share * 100) // 100) * R2_FACTOR for cv in covers))
+            share100 = int(round(PAYOUT_SCHEDULE["t4"] * 100))  # 4-hour tier only (CONTRACTS 1.8)
+            for _ in range(len(eh)):
+                r2 += int(sum(((int(cv) * share100) // 100) * R2_FACTOR for cv in covers))
         r2_lines.append(f"{y}: {r2} cents on {int(((test_hi['start'].dt.year == y) & test_hi['fips'].isin(list(DEMO_COUNTIES))).sum())} theta_hi events")
         years.append({"year": y, "premiums_cents": prem_c, "payouts_cents": int(pay), "loss_ratio": r6(pay / prem_c) if prem_c else None, "events": int(sum(ebc.values())), "events_by_county": ebc, "claims_paid": int(claims)})
     r2m = _r2_multiplier()
@@ -674,7 +804,7 @@ def build_backtest() -> dict:
             "beats_baselines is true only if the NB model has lower deviance and lower log score than each baseline whose score is finite.",
             f"Severity: GPD on the excess of the longest run over 4 h, location fixed at 0. The KS p-value is computed with parameters estimated from the same data, so it is optimistic. P(24 h | event): fitted {sev['p24_fitted']:.4f}, training {sev['p24_empirical']:.4f}, test {test_p24:.4f}.",
             f"Credibility: Bühlmann-Straub across the {len(ct)} universe counties with each state's exposure-weighted rate as the collective; s2 = {cred['s2']:.6g}, a = {cred['a']:.6g}. " + ("k = " + format(cred["k"], ".6g") if cred["k"] is not None else "Because a is not positive, k is null and every credibility weight is 0: the county histories carry no credible signal beyond their state's rate at this event count") + ". Rates are events per county-month.",
-            f"Pool: simulated members (pool of {POOL_MEMBERS} as in solvency.json, all with a witness), premiums frozen from pricing_table.json, real 2023-2024 theta_lo events in the three demo counties; each member is affected with probability equal to the event's mean share (seed {SEED + 1}). Members and their losses are simulated.",
+            f"Pool: simulated members (pool of {POOL_MEMBERS} as in solvency.json, all with a witness, split over the offered demo counties: {', '.join(DEMO_COUNTIES[f] for f in offered_counties())}), premiums frozen from pricing_table.json, real 2023-2024 theta_lo events; each affected member (probability equal to the event's mean share, seed {SEED + 1}) is paid the 4-hour tier only, {PAYOUT_SCHEDULE['t4']:.0%} of cover, no 24-hour top-up (CONTRACTS 1.8). events and events_by_county count events in all three demo counties, including any not offered (no members there, so no payouts). Members and their losses are simulated.",
             "R2 cost, not priced (CONTRACTS 1.7): if every member had no witness, R2 would pay 50% of the schedule on theta_hi events: " + "; ".join(r2_lines) + ".",
             (f"Estimated R2 multiplier (training years, pooled universe): a no-witness member's expected payout is {r2m['ratio']:.3f} times a witness member's (theta_hi rate {r2m['rate_hi']:.4f} vs theta_lo rate {r2m['rate_lo']:.4f} events per county-year; prob affected {mr['p_affected']:.4f})." if r2m["ratio"] is not None else "R2 multiplier not computed: no witness-member payout in training."),
             "Hurricane Beryl (Harris, July 2024) is in the test years; the feed is missing its onset (data_quality.json storm_windows), so its event starts later than the storm did. The models never saw 2023-2024.",

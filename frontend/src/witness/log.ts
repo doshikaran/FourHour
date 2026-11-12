@@ -111,6 +111,18 @@ export async function registerWitness(
   return { record, keyPair };
 }
 
+/** Start of the halt message when the server no longer knows this device (for example after a database reset). */
+export const UNKNOWN_DEVICE_HALT = 'The server does not know this device';
+
+/** True for the backend's answer to a device it does not know: 404, normally with code device_not_found. */
+export function isUnknownDeviceError(e: unknown): boolean {
+  return e instanceof ApiError && (e.code === 'device_not_found' || e.status === 404);
+}
+
+export function isUnknownDeviceHalt(halted: string | null | undefined): boolean {
+  return typeof halted === 'string' && halted.startsWith(UNKNOWN_DEVICE_HALT);
+}
+
 export type UploadOutcome =
   | { status: 'nothing' }
   | { status: 'uploaded'; accepted: number }
@@ -145,6 +157,13 @@ export class WitnessLog {
   subscribe(fn: () => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  /** Marks the log as unusable because the server does not know its device. Returns the message. */
+  haltUnknownDevice(): string {
+    const halted = `${UNKNOWN_DEVICE_HALT} (${this.rec.device_id}). The server's database may have been reset, for example when the hosted service restarted. Register this device again to start a new log.`;
+    this.commit({ ...this.rec, halted, last_upload_error: null });
+    return halted;
   }
 
   private commit(next: WitnessRecord): void {
@@ -201,11 +220,10 @@ export class WitnessLog {
       try {
         res = await api.postEntries({ device_id: this.rec.device_id, entries: batch.map((b) => b.entry) });
       } catch (e: unknown) {
-        if (e instanceof ApiError && e.code === 'device_not_found') {
+        if (isUnknownDeviceError(e)) {
           // The server no longer knows this device (for example after a database reset). Retrying
           // cannot help; the member must set the device up again.
-          const halted = `The server does not know this device (${this.rec.device_id}); it may have been reset. Set this device up again to start a new log.`;
-          this.commit({ ...this.rec, halted, last_upload_error: null });
+          const halted = this.haltUnknownDevice();
           return { status: 'halted', reason: halted };
         }
         const error = (e instanceof Error ? e.message : String(e)).replace(/\.+$/, '');

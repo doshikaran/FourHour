@@ -7,7 +7,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FourHourApi } from '../api/client';
 import type { PolicyId, WitnessKind } from '../api/types';
 import { createKeyStore, type KeyStore } from './keystore';
-import { HEARTBEAT_MS, WitnessLog, loadRecord, registerWitness, storageKey, type Reading, type UploadOutcome } from './log';
+import {
+  HEARTBEAT_MS,
+  WitnessLog,
+  isUnknownDeviceError,
+  loadRecord,
+  registerWitness,
+  storageKey,
+  type Reading,
+  type UploadOutcome,
+} from './log';
 import { createSafeStore, type KeyValueStore } from './storage';
 
 /** The Battery Status API is not in TypeScript's DOM types. */
@@ -42,6 +51,8 @@ export interface WitnessView {
   attest: (kind: 'attest_lost' | 'attest_restored') => void;
   uploadNow: () => void;
   forget: () => void;
+  /** Deletes the local key and log and registers a new device straight away (server lost the old one). */
+  registerNew: () => void;
 }
 
 const SENSED_NOTE = 'device_time, charging, battery_level and online are real readings (Battery Status API)';
@@ -118,13 +129,24 @@ export function useWitness(api: FourHourApi, policyId: PolicyId): WitnessView {
       const pair = await keys.load(policyId);
       if (!live) return;
       if (!pair) return setPhase({ kind: 'key_lost' });
-      setLog(new WitnessLog(rec, pair.privateKey, { store }));
+      const l = new WitnessLog(rec, pair.privateKey, { store });
+      setLog(l);
       setPhase({ kind: 'ready' });
+      // Ask the server whether it still knows this device: the hosted database is wiped on restart.
+      // Any other failure (offline, 5xx) is left to the normal upload retries.
+      if (!rec.halted) {
+        api.deviceEntries(rec.device_id, 1).then(
+          () => undefined,
+          (e: unknown) => {
+            if (live && isUnknownDeviceError(e)) l.haltUnknownDevice();
+          },
+        );
+      }
     })().catch((e: unknown) => live && setPhase({ kind: 'failed', error: e instanceof Error ? e : new Error(String(e)) }));
     return () => {
       live = false;
     };
-  }, [policyId, store]);
+  }, [api, policyId, store]);
 
   // 2. Battery Status API, or manual mode.
   useEffect(() => {
@@ -238,6 +260,15 @@ export function useWitness(api: FourHourApi, policyId: PolicyId): WitnessView {
     setPhase({ kind: 'unregistered' });
   }, [store, policyId]);
 
+  const registerNew = useCallback(() => {
+    store.remove(storageKey(policyId));
+    lastCharging.current = null;
+    setLog(null);
+    setLastOutcome(null);
+    const keys = keysRef.current;
+    (keys ? keys.remove(policyId) : Promise.resolve()).then(register, register);
+  }, [store, policyId, register]);
+
   const uploadNow = useCallback(() => log && doUpload(log), [log, doUpload]);
 
   return {
@@ -254,5 +285,6 @@ export function useWitness(api: FourHourApi, policyId: PolicyId): WitnessView {
     attest,
     uploadNow,
     forget,
+    registerNew,
   };
 }

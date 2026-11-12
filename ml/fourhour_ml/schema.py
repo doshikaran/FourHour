@@ -16,7 +16,7 @@ from typing import Any, TypeGuard
 
 from .config import ARTIFACTS_DIR, REPO_DIR, SEED, TEST_YEARS, TRAIN_YEARS
 
-CONTRACT_VERSION = "1.7"
+CONTRACT_VERSION = "1.8"
 
 ISO_Z = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 FIPS = re.compile(r"^\d{5}$")
@@ -33,7 +33,8 @@ ARTIFACT_NAMES = (
 BASIS_RISK_SCHEMES = ("index_only", "rules_perfect_witness", "rules_10pct_missing", "rules_30pct_missing")
 # The quote breakdown fields (CONTRACTS.md section 4) that do not depend on cover_cents.
 STOP_LOSS_KEYS = ("attachment_cents", "limit_cents", "price_cents")
-PRICING_COUNTY_FIELDS = ("expected_events_per_year", "prob_24h_given_event", "prob_premises_affected", "credibility_weight")
+PRICING_COUNTY_FIELDS = ("expected_events_per_year", "prob_premises_affected", "credibility_weight", "offered", "not_offered_reason")
+CAPITAL_ASSUMPTION_KEYS = ("initial_capital_cents", "description")
 
 GRID_KEYS = ("theta_lo", "theta_hi", "expected_wrong_payouts", "expected_missed_payouts", "objective", "chosen")
 FREQ_MODELS = ("nb_glm", "poisson_glm", "historical_mean")
@@ -228,19 +229,25 @@ def _check_pricing_table(v: _V, d: dict) -> None:
                 v.err(path, "key must be a 5-digit FIPS string")
             if v.obj(row, path, PRICING_COUNTY_FIELDS, allow_extra=False):
                 v.num(row, "expected_events_per_year", path, lo=0)
-                v.num(row, "prob_24h_given_event", path, lo=0, hi=1)
                 v.num(row, "prob_premises_affected", path, lo=0, hi=1)
                 v.num(row, "credibility_weight", path, lo=0, hi=1)
+                # CONTRACTS 1.8: offered is a boolean; the reason is one sentence when not
+                # offered and null when offered.
+                if not isinstance(row.get("offered"), bool):
+                    v.err(f"{path}.offered", "must be a boolean")
+                elif row["offered"]:
+                    if row.get("not_offered_reason") is not None:
+                        v.err(f"{path}.not_offered_reason", "must be null when offered")
+                else:
+                    v.str_(row, "not_offered_reason", path)
     r = d.get("rates")
     if "rates" in d and v.obj(r, "rates", ("risk_margin_rate", "expense_load_cents"), allow_extra=False):
         v.num(r, "risk_margin_rate", "rates", lo=0)
         v.int_(r, "expense_load_cents", "rates", lo=0)
     s = d.get("payout_schedule")
-    if "payout_schedule" in d and v.obj(s, "payout_schedule", ("t4", "t24"), allow_extra=False):
+    # CONTRACTS 1.8: only the tiers the backend pays; the 24-hour tier is cut.
+    if "payout_schedule" in d and v.obj(s, "payout_schedule", ("t4",), allow_extra=False):
         v.num(s, "t4", "payout_schedule", nullable=False, lo=0, hi=1)
-        v.num(s, "t24", "payout_schedule", nullable=False, lo=0, hi=1)
-        if _is_num(s.get("t4")) and _is_num(s.get("t24")) and s["t4"] > s["t24"]:
-            v.err("payout_schedule", "t4 must not exceed t24")
 
 
 def _num_map(v: _V, d: Any, path: str, keys: tuple[str, ...], lo: float | None = None) -> None:
@@ -368,10 +375,14 @@ def _check_backtest(v: _V, d: dict) -> None:
 
 
 def _check_solvency(v: _V, d: dict) -> None:
-    keys = ("members", "simulations", "ruin_probability", "capital_1_in_200_cents", "stop_loss", "annual_loss_quantiles", "provenance")
+    keys = ("members", "simulations", "capital_assumption", "ruin_probability", "capital_1_in_200_cents", "stop_loss", "annual_loss_quantiles", "provenance")
     v.obj(d, "", keys, allow_extra=False)
     v.int_(d, "members", "", nullable=False, lo=1)
     v.int_(d, "simulations", "", nullable=False, lo=1)
+    ca = d.get("capital_assumption")
+    if "capital_assumption" in d and v.obj(ca, "capital_assumption", CAPITAL_ASSUMPTION_KEYS, allow_extra=False):
+        v.int_(ca, "initial_capital_cents", "capital_assumption", nullable=False, lo=0)
+        v.str_(ca, "description", "capital_assumption")
     v.num(d, "ruin_probability", "", lo=0, hi=1)
     v.int_(d, "capital_1_in_200_cents", "", lo=0)
     sl = d.get("stop_loss")
@@ -425,8 +436,18 @@ def _check_basis_risk(v: _V, d: dict) -> None:
 
 
 def _check_data_quality(v: _V, d: dict) -> None:
-    keys = ("coverage_floor", "rows", "year_summary", "gap_bridge_evidence", "storm_windows", "timestamp_check", "county_coverage", "provenance")
+    keys = ("coverage_floor", "rows", "year_summary", "gap_bridge_evidence", "storm_windows", "timestamp_check", "county_coverage", "findings", "provenance")
     v.obj(d, "", keys, allow_extra=False)
+    fd = d.get("findings")
+    if "findings" in d:
+        if not isinstance(fd, list):
+            v.err("findings", "must be a list")
+        else:
+            for i, x in enumerate(fd):
+                p = f"findings[{i}]"
+                if v.obj(x, p, ("id", "finding"), allow_extra=False):
+                    v.str_(x, "id", p, pattern=SCENARIO_ID)
+                    v.str_(x, "finding", p)
     v.num(d, "coverage_floor", "", nullable=False, lo=0, hi=1)
     rows = d.get("rows")
     if not isinstance(rows, list) or not rows:

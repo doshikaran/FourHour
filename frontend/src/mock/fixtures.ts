@@ -49,12 +49,22 @@ export const fixtureProvenance: Provenance = {
 export const FIXTURE_FIPS = '99001';
 
 export const fixtureCounties: County[] = [
-  { fips: '99001', name: 'Fixture County A', state: 'ZZ', data_coverage: 0.5 },
-  { fips: '99002', name: 'Fixture County B', state: 'ZZ', data_coverage: null },
+  { fips: '99001', name: 'Fixture County A', state: 'ZZ', data_coverage: 0.5, offered: true, not_offered_reason: null },
+  { fips: '99002', name: 'Fixture County B', state: 'ZZ', data_coverage: null, offered: true, not_offered_reason: null },
   // The mock answers 422 pricing_not_computed for this one, to exercise that state.
-  { fips: '99003', name: 'Fixture County C (pricing not computed)', state: 'ZZ', data_coverage: null },
+  { fips: '99003', name: 'Fixture County C (pricing not computed)', state: 'ZZ', data_coverage: null, offered: true, not_offered_reason: null },
+  // 1.8: not offered. The mock answers 422 county_not_offered if a quote or policy is requested anyway.
+  {
+    fips: '99004',
+    name: 'Fixture County D (not offered)',
+    state: 'ZZ',
+    data_coverage: null,
+    offered: false,
+    not_offered_reason: 'Fixture: no qualifying event in this fixture credibility group, so no price.',
+  },
 ];
 export const FIXTURE_UNPRICED_FIPS = '99003';
+export const FIXTURE_NOT_OFFERED_FIPS = '99004';
 
 export const T0 = '2000-01-01T00:00:00Z';
 
@@ -285,10 +295,17 @@ export const fixtureAnalytics: AnalyticsArtifacts = {
   pricing: {
     model_version: 'fixture-0',
     counties: {
-      '99001': { expected_events_per_year: null, prob_24h_given_event: null, prob_premises_affected: null, credibility_weight: null },
+      '99001': { expected_events_per_year: null, prob_premises_affected: null, credibility_weight: null, offered: true, not_offered_reason: null },
+      '99004': {
+        expected_events_per_year: null,
+        prob_premises_affected: null,
+        credibility_weight: null,
+        offered: false,
+        not_offered_reason: 'Fixture: no qualifying event in this fixture credibility group, so no price.',
+      },
     },
     rates: { risk_margin_rate: null, expense_load_cents: null },
-    payout_schedule: { t4: 0.6, t24: 1.0 },
+    payout_schedule: { t4: 0.6 },
     provenance: fixtureProvenance,
   },
   // 8.1 shapes with every metric null, so the evidence panels show "not computed" in mock mode.
@@ -296,6 +313,7 @@ export const fixtureAnalytics: AnalyticsArtifacts = {
   solvency: {
     members: 0,
     simulations: 0,
+    capital_assumption: { initial_capital_cents: null, description: FIXTURE_NOTE },
     ruin_probability: null,
     capital_1_in_200_cents: null,
     stop_loss: { attachment_cents: null, limit_cents: null, price_cents: null },

@@ -9,10 +9,13 @@
 //     seed, notes), generated_at parses as RFC 3339, and data_sources is an array;
 //   - it has the top-level keys section 8 names for that file. A key may be
 //     null ("could not be computed"), but it must be present;
-//   - the two inner shapes contract 1.2 pins down: pricing_table.counties is
-//     an object keyed by 5-digit FIPS whose values carry the four county
-//     breakdown keys, and solvency.stop_loss, when not null, carries
-//     attachment_cents, limit_cents and price_cents.
+//   - pricing_table.counties is an object keyed by 5-digit FIPS whose values
+//     carry expected_events_per_year, prob_premises_affected,
+//     credibility_weight, offered (boolean or null) and not_offered_reason;
+//     pricing_table.payout_schedule, when not null, has exactly the tiers
+//     the rule engine pays (CONTRACTS.md 1.8: "t4" only); and
+//     solvency.stop_loss, when not null, carries attachment_cents,
+//     limit_cents and price_cents.
 //
 // It does not check value types or ranges, or inner shapes the contract
 // still lists as open. Scenario files are not part of artifacts_loaded
@@ -27,7 +30,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
+	"sort"
 	"time"
+
+	"fourhour/backend/internal/rules"
 )
 
 const maxArtifactBytes = 32 << 20
@@ -230,9 +237,39 @@ func checkPricingCounties(top map[string]json.RawMessage) error {
 		if isNull(v) {
 			continue
 		}
-		if _, err := objectWithKeys(v, "counties."+fips, []string{"expected_events_per_year", "prob_24h_given_event", "prob_premises_affected", "credibility_weight"}); err != nil {
+		c, err := objectWithKeys(v, "counties."+fips, []string{"expected_events_per_year", "prob_premises_affected", "credibility_weight", "offered", "not_offered_reason"})
+		if err != nil {
 			return err
 		}
+		if o := c["offered"]; !isNull(o) && string(o) != "true" && string(o) != "false" {
+			return fmt.Errorf("counties.%s.offered is not a boolean", fips)
+		}
+	}
+	return checkPayoutSchedule(top)
+}
+
+// checkPayoutSchedule: payout_schedule, when not null, is an object whose
+// keys are exactly the tiers the rule engine pays (CONTRACTS.md 1.8: only
+// "t4"). A t24 key is refused: the premium must price what is paid.
+func checkPayoutSchedule(top map[string]json.RawMessage) error {
+	raw := top["payout_schedule"]
+	if isNull(raw) {
+		return nil
+	}
+	paid := rules.PaidTiers()
+	obj, err := objectWithKeys(raw, "payout_schedule", paid)
+	if err != nil {
+		return err
+	}
+	if len(obj) != len(paid) {
+		var extra []string
+		for k := range obj {
+			if !slices.Contains(paid, k) {
+				extra = append(extra, k)
+			}
+		}
+		sort.Strings(extra)
+		return fmt.Errorf("payout_schedule has tiers the backend does not pay: %v", extra)
 	}
 	return nil
 }

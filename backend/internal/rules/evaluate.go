@@ -107,11 +107,16 @@ type Policy struct {
 	Entries []WitnessEntry
 }
 
-// Schedule is the payout schedule from pricing_table.json.
+// Schedule is the payout schedule from pricing_table.json. Only the 4-hour
+// tier is paid (CONTRACTS.md 1.8), so it has only T4.
 type Schedule struct {
-	T4  *big.Rat
-	T24 *big.Rat
+	T4 *big.Rat
 }
+
+// PaidTiers returns the tiers Evaluate can decide. pricing_table's
+// payout_schedule must have exactly these keys, so the premium prices what
+// is paid (CONTRACTS.md section 8).
+func PaidTiers() []string { return []string{TierT4} }
 
 // Key identifies a claim for the uniqueness rules of CONTRACTS.md section 3.
 type Key struct {

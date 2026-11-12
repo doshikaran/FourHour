@@ -69,6 +69,7 @@ func NewHandler(d Deps) http.Handler {
 	})
 	if d.Service != nil {
 		mux.HandleFunc("GET /api/counties", h.counties)
+		mux.HandleFunc("GET /api/demo", h.demo)
 		mux.HandleFunc("POST /api/quotes", h.quote)
 		mux.HandleFunc("POST /api/members", h.createMember)
 		mux.HandleFunc("POST /api/policies", h.createPolicy)
@@ -205,12 +206,15 @@ func (h *handlers) health(w http.ResponseWriter, r *http.Request) {
 }
 
 // County is one GET /api/counties item. DataCoverage is null until
-// data_quality.json has a value for the county.
+// data_quality.json has a value for the county. Offered and
+// NotOfferedReason come from pricing_table.json (CONTRACTS.md 1.8).
 type County struct {
-	FIPS         string   `json:"fips"`
-	Name         string   `json:"name"`
-	State        string   `json:"state"`
-	DataCoverage *float64 `json:"data_coverage"`
+	FIPS             string   `json:"fips"`
+	Name             string   `json:"name"`
+	State            string   `json:"state"`
+	DataCoverage     *float64 `json:"data_coverage"`
+	Offered          bool     `json:"offered"`
+	NotOfferedReason *string  `json:"not_offered_reason"`
 }
 
 // demoCounties are the three counties of SPEC.md section 2.
@@ -222,12 +226,28 @@ var demoCounties = []County{
 
 func (h *handlers) counties(w http.ResponseWriter, r *http.Request) {
 	cov := artifacts.CountyCoverage(h.d.ArtifactsDir)
+	fips := make([]string, len(demoCounties))
+	for i, c := range demoCounties {
+		fips[i] = c.FIPS
+	}
+	offers := artifacts.CountyOffers(h.d.ArtifactsDir, fips)
 	out := make([]County, len(demoCounties))
 	for i, c := range demoCounties {
 		c.DataCoverage = cov[c.FIPS]
+		c.Offered, c.NotOfferedReason = offers[c.FIPS].Offered, offers[c.FIPS].Reason
 		out[i] = c
 	}
 	WriteJSON(w, http.StatusOK, map[string][]County{"counties": out})
+}
+
+// demo serves GET /api/demo: the startup demo policy, or policy_id null.
+func (h *handlers) demo(w http.ResponseWriter, r *http.Request) {
+	d, err := h.d.Service.DemoPolicy(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, d)
 }
 
 type quoteRequest struct {

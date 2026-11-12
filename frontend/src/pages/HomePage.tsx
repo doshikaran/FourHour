@@ -48,7 +48,7 @@ export function HomePage() {
             <li>Leave a laptop or phone on a charger at your premises. It keeps a signed log of when its charger loses power.</li>
             <li>
               When the county outage index stays high for four hours and your device agrees, a PayPal payout is sent
-              automatically. A top-up follows if the outage reaches 24 hours.
+              automatically.
             </li>
           </ol>
         </div>

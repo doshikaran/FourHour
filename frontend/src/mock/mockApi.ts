@@ -12,6 +12,7 @@ import { ApiError, type FourHourApi } from '../api/client';
 import type {
   ClaimListItem,
   CountiesResponse,
+  DemoResponse,
   Member,
   Policy,
   PostEntriesResponse,
@@ -21,6 +22,7 @@ import type {
 } from '../api/types';
 import { checkEntry, importPublicJwk } from '../witness/entry';
 import {
+  FIXTURE_NOT_OFFERED_FIPS,
   FIXTURE_UNPRICED_FIPS,
   T0,
   derechoFixtureSeries,
@@ -60,6 +62,17 @@ export interface MockApi extends FourHourApi {
 
 export function isMockApi(api: FourHourApi): api is MockApi {
   return api.mode === 'mock' && 'dropStream' in api;
+}
+
+function notOffered(endpoint: string, fips: string): ApiError {
+  const c = fixtureCounties.find((x) => x.fips === fips);
+  return new ApiError({
+    status: 422,
+    code: 'county_not_offered',
+    message: c?.not_offered_reason ?? 'No price has been computed for this county.',
+    paypalDebugId: null,
+    endpoint,
+  });
 }
 
 function notFound(endpoint: string, code: string, message: string): ApiError {
@@ -155,6 +168,17 @@ export function createMockApi(opts: MockApiOptions = {}): MockApi {
     },
     dispose: () => replay.dispose(),
 
+    // The mock's demo policy is the fixture policy (1.8 GET /api/demo).
+    demo: () =>
+      guard('GET /demo', () =>
+        reply<DemoResponse>({
+          policy_id: fixturePolicy.id,
+          member_name: fixtureMember.name,
+          fips: fixturePolicy.fips,
+          cover_cents: fixturePolicy.cover_cents,
+          premium_cents: fixturePolicy.premium_cents,
+        }),
+      ),
     health: () => guard('GET /health', () => reply({ status: 'ok' as const, paypal_env: 'sandbox' as const, artifacts_loaded: [] })),
     counties: () => guard('GET /counties', () => reply<CountiesResponse>({ counties: fixtureCounties })),
     quote: (req) =>
@@ -162,6 +186,7 @@ export function createMockApi(opts: MockApiOptions = {}): MockApi {
         if (!fixtureCounties.some((c) => c.fips === req.fips)) {
           return fail(notFound('POST /quotes', 'county_not_found', `Fixture mock has no county ${req.fips}.`));
         }
+        if (req.fips === FIXTURE_NOT_OFFERED_FIPS) return fail(notOffered('POST /quotes', req.fips));
         if (req.fips === FIXTURE_UNPRICED_FIPS) {
           return fail(
             new ApiError({
@@ -180,7 +205,7 @@ export function createMockApi(opts: MockApiOptions = {}): MockApi {
           model_version: 'fixture-0',
           breakdown: {
             expected_events_per_year: 0.5,
-            prob_24h_given_event: 0.5,
+            expected_payout_share: 0.6,
             prob_premises_affected: 0.5,
             expected_annual_payout_cents: 100,
             credibility_weight: 0.5,
@@ -202,6 +227,7 @@ export function createMockApi(opts: MockApiOptions = {}): MockApi {
         if (!members.has(req.member_id)) {
           return fail(notFound('POST /policies', 'member_not_found', `No member ${req.member_id}.`));
         }
+        if (req.fips === FIXTURE_NOT_OFFERED_FIPS) return fail(notOffered('POST /policies', req.fips));
         const p: Policy = {
           ...fixturePolicy,
           id: fixtureId('pol', ++counter),

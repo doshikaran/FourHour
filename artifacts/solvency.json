@@ -1,12 +1,16 @@
 {
   "members": 1000,
   "simulations": 20000,
+  "capital_assumption": {
+    "initial_capital_cents": 0,
+    "description": "The pool starts each simulated year with no capital: only that year's premiums net of the expense load (1453656 cents) are available to pay claims. Ruin is a simulated year whose payouts exceed that premium income."
+  },
   "ruin_probability": 0.1229,
-  "capital_1_in_200_cents": 1686492,
+  "capital_1_in_200_cents": 1369344,
   "stop_loss": {
-    "attachment_cents": 2940000,
-    "limit_cents": 255000,
-    "price_cents": 8517
+    "attachment_cents": 2628000,
+    "limit_cents": 195000,
+    "price_cents": 6290
   },
   "annual_loss_quantiles": [
     {
@@ -15,20 +19,20 @@
     },
     {
       "q": 0.9,
-      "loss_cents": 2730000
+      "loss_cents": 2481000
     },
     {
       "q": 0.99,
-      "loss_cents": 3140000
+      "loss_cents": 2775000
     },
     {
       "q": 0.995,
-      "loss_cents": 3195000
+      "loss_cents": 2823000
     }
   ],
   "provenance": {
-    "generated_at": "2026-11-12T00:09:46Z",
-    "git_commit": "5a552e3-dirty",
+    "generated_at": "2026-11-12T07:24:09Z",
+    "git_commit": "e9fbacd-dirty",
     "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_solvency",
     "data_sources": [
       {
@@ -101,6 +105,6 @@
       2024
     ],
     "seed": 20261111,
-    "notes": "Simulated pool: 1000 members split evenly over Harris, Miami-Dade and Cook, covers $50/$150/$300 in turn, every member with a witness (the priced case). Members and their losses are simulated; the outage events are real. 20000 simulated years, seed 20261111. For each county, a whole fitted training year (2014-2022, coverage floor) is drawn at random and its real theta_lo events replayed, so one event hits every member in the county at once. Each member is affected by an event with probability equal to the event's mean share (SPEC 5.5 version 1). Harris and Cook have no theta_lo qualifying event in their fitted training years, so their simulated losses are zero; nearly all simulated loss comes from Miami-Dade. Their premiums still carry a non-zero event rate from credibility with the state rate (pricing_table.json), so the simulation and the pricing disagree for those counties; this is a limit of resampling a county's own history with so few events. Annual risk income = 12 x (premium - expense load) summed over members = 1508508 cents. ruin_probability = share of simulated years whose payouts exceed that income with no other capital. capital_1_in_200_cents = 99.5th percentile loss - risk income (0 if negative). Aggregate stop-loss layer: attaches at the 95% annual loss and exhausts at the 99.5% loss; price = expected layer loss x (1 + risk_margin_rate 0.4794). Mean simulated annual loss 355404 cents; share of simulated years with no payout 0.8771."
+    "notes": "Simulated pool: 1000 members split evenly over the offered demo counties (Harris County, TX, Miami-Dade County, FL), covers $50/$150/$300 in turn, every member with a witness (the priced case). Members and their losses are simulated; the outage events are real. Not offered, so no members: Cook County, IL (pricing_table.json). Payouts: the 4-hour tier only, 60% of cover per affected member per event, rounded down to a cent (CONTRACTS 1.8: no 24-hour top-up). 20000 simulated years, seed 20261111. For each county, a whole fitted training year (2014-2022, coverage floor) is drawn at random and its real theta_lo events replayed, so one event hits every member in the county at once. Each member is affected by an event with probability equal to the event's mean share (SPEC 5.5 version 1). Training theta_lo qualifying events in the fitted years per demo county: Harris County, TX 0, Miami-Dade County, FL 1, Cook County, IL 0. A county with none has zero simulated loss, while an offered county's premium can still carry a non-zero rate from credibility with its state rate (pricing_table.json), so simulation and pricing disagree for it; this is a limit of resampling a county's own history with so few events. Annual risk income = 12 x (premium - expense load) summed over members = 1453656 cents. ruin_probability = share of simulated years whose payouts exceed that income with no other capital. capital_1_in_200_cents = 99.5th percentile loss - risk income (0 if negative). Aggregate stop-loss layer: attaches at the 95% annual loss and exhausts at the 99.5% loss; price = expected layer loss x (1 + risk_margin_rate 0.4710). Mean simulated annual loss 318997 cents; share of simulated years with no payout 0.8771."
   }
 }

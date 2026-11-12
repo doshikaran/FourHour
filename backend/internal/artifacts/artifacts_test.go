@@ -98,9 +98,12 @@ func TestMissingFileLeftOut(t *testing.T) {
 const prov = `"provenance":{"generated_at":"2026-11-11T00:00:00Z","git_commit":"","code":"","data_sources":[],"train_years":[],"test_years":[],"seed":null,"notes":"test"}`
 
 func TestInnerShapes(t *testing.T) {
-	county := `{"expected_events_per_year":null,"prob_24h_given_event":null,"prob_premises_affected":null,"credibility_weight":null}`
+	county := `{"expected_events_per_year":null,"prob_premises_affected":null,"credibility_weight":null,"offered":false,"not_offered_reason":"r"}`
 	pricing := func(counties string) string {
 		return `{` + prov + `,"model_version":null,"rates":null,"payout_schedule":null,"counties":` + counties + `}`
+	}
+	schedule := func(s string) string {
+		return `{` + prov + `,"model_version":null,"rates":null,"counties":{},"payout_schedule":` + s + `}`
 	}
 	solvency := func(stopLoss string) string {
 		return `{` + prov + `,"members":null,"simulations":null,"ruin_probability":null,"capital_1_in_200_cents":null,"annual_loss_quantiles":null,"stop_loss":` + stopLoss + `}`
@@ -114,7 +117,14 @@ func TestInnerShapes(t *testing.T) {
 		{"counties null", "pricing_table", pricing(`null`), true, ""},
 		{"counties not object", "pricing_table", pricing(`[]`), false, "counties is not an object"},
 		{"counties bad key", "pricing_table", pricing(`{"Harris":` + county + `}`), false, "not a 5-digit FIPS"},
-		{"county missing key", "pricing_table", pricing(`{"48201":{"expected_events_per_year":null}}`), false, `counties.48201 missing "prob_24h_given_event"`},
+		{"county missing key", "pricing_table", pricing(`{"48201":{"expected_events_per_year":null}}`), false, `counties.48201 missing "prob_premises_affected"`},
+		{"county without offered", "pricing_table", pricing(`{"48201":{"expected_events_per_year":null,"prob_premises_affected":null,"credibility_weight":null}}`), false, `counties.48201 missing "offered"`},
+		{"county offered not boolean", "pricing_table", pricing(`{"48201":{"expected_events_per_year":null,"prob_premises_affected":null,"credibility_weight":null,"offered":"yes","not_offered_reason":null}}`), false, "offered is not a boolean"},
+		{"county without prob_24h (1.8)", "pricing_table", pricing(`{"48201":{"expected_events_per_year":0.25,"prob_premises_affected":0.4,"credibility_weight":0.1,"offered":true,"not_offered_reason":null}}`), true, ""},
+		{"schedule t4 only", "pricing_table", schedule(`{"t4":0.6}`), true, ""},
+		{"schedule t4 null", "pricing_table", schedule(`{"t4":null}`), true, ""},
+		{"schedule with t24", "pricing_table", schedule(`{"t4":0.6,"t24":1.0}`), false, "payout_schedule has tiers the backend does not pay: [t24]"},
+		{"schedule missing t4", "pricing_table", schedule(`{}`), false, `payout_schedule missing "t4"`},
 		{"stop_loss cents keys", "solvency", solvency(`{"attachment_cents":null,"limit_cents":null,"price_cents":null}`), true, ""},
 		{"stop_loss null", "solvency", solvency(`null`), true, ""},
 		{"stop_loss old keys", "solvency", solvency(`{"attachment":null,"limit":null,"price":null}`), false, `stop_loss missing "attachment_cents"`},

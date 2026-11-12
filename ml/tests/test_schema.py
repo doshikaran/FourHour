@@ -63,10 +63,12 @@ VALID = {
     },
     "pricing_table": {
         "model_version": "v",
-        "counties": {"48201": {"expected_events_per_year": 1.0, "prob_24h_given_event": 0.1,
-                               "prob_premises_affected": 0.2, "credibility_weight": 0.5}},
+        "counties": {"48201": {"expected_events_per_year": 1.0, "prob_premises_affected": 0.2, "credibility_weight": 0.5,
+                               "offered": True, "not_offered_reason": None},
+                     "17031": {"expected_events_per_year": 0.0, "prob_premises_affected": 0.2, "credibility_weight": 0.0,
+                               "offered": False, "not_offered_reason": "No qualifying outage in its pricing group."}},
         "rates": {"risk_margin_rate": 0.3, "expense_load_cents": 100},
-        "payout_schedule": {"t4": 0.6, "t24": 1.0},
+        "payout_schedule": {"t4": 0.6},
         "provenance": prov(),
     },
     "backtest": {
@@ -83,7 +85,9 @@ VALID = {
                                              "events": 3, "events_by_county": {"48201": 1}, "claims_paid": 10}]},
         "provenance": prov(),
     },
-    "solvency": {"members": 1000, "simulations": 10, "ruin_probability": 0.01, "capital_1_in_200_cents": 5,
+    "solvency": {"members": 1000, "simulations": 10,
+                 "capital_assumption": {"initial_capital_cents": 0, "description": "No starting capital; ruin is payouts above premium income."},
+                 "ruin_probability": 0.01, "capital_1_in_200_cents": 5,
                  "stop_loss": {"attachment_cents": 100, "limit_cents": 200, "price_cents": 3},
                  "annual_loss_quantiles": [{"q": q, "loss_cents": 1} for q in (0.5, 0.9, 0.99, 0.995)], "provenance": prov()},
     "basis_risk": {
@@ -106,6 +110,7 @@ VALID = {
                            "expected_intervals": 960, "intervals_present": 915, "zero_rows": 0, "longest_missing_minutes": 540, "notes": "n"}],
         "timestamp_check": {"assumed": "UTC", "storm": "s", "first_sharp_rise_utc": "2024-05-16T23:00:00Z", "consistent_with_utc": True, "evidence": "e"},
         "county_coverage": {"48201": {"data_coverage": 0.99}},
+        "findings": [{"id": "harris-training-years", "finding": "plain sentences"}],
         "provenance": prov(),
     },
 }
@@ -152,8 +157,22 @@ MALFORMED = [
     ("trigger_params", "chosen not bool", lambda d: d["grid"][0].__setitem__("chosen", 1)),
     ("pricing_table", "bad fips key", lambda d: d["counties"].__setitem__("4820", d["counties"]["48201"])),
     ("pricing_table", "cents as float", lambda d: d["rates"].__setitem__("expense_load_cents", 1.5)),
-    ("pricing_table", "missing t24", lambda d: d["payout_schedule"].pop("t24")),
-    ("pricing_table", "probability above 1", lambda d: d["counties"]["48201"].__setitem__("prob_24h_given_event", 1.2)),
+    ("pricing_table", "t24 tier present (cut in 1.8)", lambda d: d["payout_schedule"].__setitem__("t24", 1.0)),
+    ("pricing_table", "missing t4", lambda d: d["payout_schedule"].pop("t4")),
+    ("pricing_table", "prob_24h_given_event in county (removed in 1.8)", lambda d: d["counties"]["48201"].__setitem__("prob_24h_given_event", 0.5)),
+    ("pricing_table", "probability above 1", lambda d: d["counties"]["48201"].__setitem__("prob_premises_affected", 1.2)),
+    ("pricing_table", "offered missing", lambda d: d["counties"]["48201"].pop("offered")),
+    ("pricing_table", "offered as string", lambda d: d["counties"]["48201"].__setitem__("offered", "yes")),
+    ("pricing_table", "reason missing", lambda d: d["counties"]["48201"].pop("not_offered_reason")),
+    ("pricing_table", "offered with a reason", lambda d: d["counties"]["48201"].__setitem__("not_offered_reason", "x")),
+    ("pricing_table", "not offered without a reason", lambda d: d["counties"]["17031"].__setitem__("not_offered_reason", None)),
+    ("solvency", "capital_assumption missing", lambda d: d.pop("capital_assumption")),
+    ("solvency", "capital float cents", lambda d: d["capital_assumption"].__setitem__("initial_capital_cents", 0.0)),
+    ("solvency", "capital description empty", lambda d: d["capital_assumption"].__setitem__("description", "")),
+    ("solvency", "capital extra key", lambda d: d["capital_assumption"].__setitem__("ruin_rule", "x")),
+    ("data_quality", "findings not a list", lambda d: d.__setitem__("findings", {"id": "x"})),
+    ("data_quality", "finding missing text", lambda d: d["findings"][0].pop("finding")),
+    ("data_quality", "finding bad id", lambda d: d["findings"][0].__setitem__("id", "Harris Training")),
     ("solvency", "NaN ruin probability", lambda d: d.__setitem__("ruin_probability", math.nan)),
     ("solvency", "members bool", lambda d: d.__setitem__("members", True)),
     ("solvency", "quantiles as object", lambda d: d.__setitem__("annual_loss_quantiles", {})),
@@ -266,7 +285,7 @@ def test_stop_loss_null_values_need_a_reason():
 def test_contract_version_is_current():
     from fourhour_ml.schema import CONTRACT_VERSION, UNSPECIFIED
 
-    assert CONTRACT_VERSION == "1.7" and UNSPECIFIED == {}
+    assert CONTRACT_VERSION == "1.8" and UNSPECIFIED == {}
 
 
 def test_basis_risk_caveats_go_in_provenance_notes_not_a_top_level_field():

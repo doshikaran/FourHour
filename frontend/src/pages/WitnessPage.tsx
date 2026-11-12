@@ -4,6 +4,7 @@
  * upload, in-order upload with retries, self-reported fallback, and its own status.
  */
 import { useState } from 'react';
+import { ApiError } from '../api/client';
 import { useApi } from '../api/context';
 import type { PolicyId } from '../api/types';
 import { PageHeader } from '../components/Layout';
@@ -11,7 +12,7 @@ import { AsyncView, ErrorState, Loading, SelfReportedChip, SimulatedChip, TestCo
 import { formatUtc } from '../lib/format';
 import { Link } from '../lib/router';
 import { useAsync } from '../lib/useAsync';
-import { exportFixture, type StoredEntry } from '../witness/log';
+import { exportFixture, isUnknownDeviceHalt, type StoredEntry } from '../witness/log';
 import { useWitness, type WitnessView } from '../witness/useWitness';
 
 export function WitnessPage({ policyId }: { policyId: string }) {
@@ -33,6 +34,12 @@ export function WitnessPage({ policyId }: { policyId: string }) {
           </p>
         )}
       </AsyncView>
+      {policy.status === 'error' && policy.error instanceof ApiError && policy.error.status === 404 && (
+        <p role="status" className="notice notice-info" style={{ color: 'var(--text)' }}>
+          The server does not have this policy. If the hosted service restarted, its database was reset and the demo policy
+          was created again with a new ID. The <Link to="/live">live page</Link> links to the current demo witness.
+        </p>
+      )}
       {!hasSubtle ? (
         <p role="alert" className="notice notice-error">
           <strong>This page needs WebCrypto, which browsers only offer over HTTPS or on localhost.</strong> Open it from an
@@ -120,10 +127,13 @@ function Running({ w }: { w: WitnessView }) {
           Power state
         </h2>
         <PowerState w={w} />
-        {w.sense.kind === 'manual' && (
+        {(w.sense.kind === 'manual' || w.sense.kind === 'battery') && (
           <div style={{ marginTop: 16 }}>
             <p className="small">
-              <SelfReportedChip /> {w.sense.why}
+              <SelfReportedChip />{' '}
+              {w.sense.kind === 'manual'
+                ? w.sense.why
+                : 'A device with no battery, such as a desktop, reports “charging” forever, so unplugging it is never seen. If the state above does not change when the power goes, report it with these buttons.'}
             </p>
             <div className="manual-buttons">
               <button type="button" className="big" onClick={() => w.attest('attest_lost')}>
@@ -145,7 +155,7 @@ function Running({ w }: { w: WitnessView }) {
             <span className="status-icon" aria-hidden="true">
               {w.online ? '✓' : '!'}
             </span>
-            {w.online ? 'Online' : 'Offline: still logging'}
+            {w.online ? 'Online' : 'Offline'}
           </span>
         </div>
         <dl className="kv" aria-live="polite">
@@ -164,7 +174,23 @@ function Running({ w }: { w: WitnessView }) {
             <code>{rec.device_id}</code>
           </dd>
         </dl>
-        {rec.halted && (
+        {rec.halted && isUnknownDeviceHalt(rec.halted) && (
+          <div role="alert" className="notice notice-warn" style={{ marginTop: 12, color: 'var(--text)' }}>
+            <p>
+              <strong>The server no longer knows this device.</strong> {rec.halted}
+            </p>
+            <p className="small">
+              Registering creates a new signing key and a new log. Entries already uploaded stay on the server; entries still
+              waiting here cannot be sent. Download the old log first if you need it.
+            </p>
+            <div className="row">
+              <button type="button" className="big" onClick={w.registerNew}>
+                Register a new device
+              </button>
+            </div>
+          </div>
+        )}
+        {rec.halted && !isUnknownDeviceHalt(rec.halted) && (
           <div role="alert" className="notice notice-error" style={{ marginTop: 12 }}>
             <p>{rec.halted}</p>
             <ForgetButton onForget={w.forget} label="Set up this device again" />
@@ -172,8 +198,7 @@ function Running({ w }: { w: WitnessView }) {
         )}
         {!rec.halted && rec.last_upload_error && (
           <p role="status" className="notice notice-warn" style={{ marginTop: 12 }}>
-            Last upload failed: {rec.last_upload_error}. Entries are kept on this device and retried every 15 seconds and when
-            the connection returns.
+            Last upload failed: {rec.last_upload_error}. The upload is retried every 15 seconds.
           </p>
         )}
         <p className="small muted" style={{ marginTop: 12 }}>
@@ -202,7 +227,8 @@ function Running({ w }: { w: WitnessView }) {
 function PowerState({ w }: { w: WitnessView }) {
   const rec = w.log?.record;
   if (w.sense.kind === 'checking') return <p className="muted">Checking the charger…</p>;
-  if (w.sense.kind === 'battery') {
+  // A self-reported "Power is out" overrides a battery that still says charging (a desktop with no battery).
+  if (w.sense.kind === 'battery' && !(w.sense.charging && rec?.attested_charging === false)) {
     const on = w.sense.charging;
     return (
       <div className="witness-status" data-testid="power-state" data-charging={String(on)}>

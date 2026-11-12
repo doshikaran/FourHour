@@ -61,23 +61,21 @@ func TestComputePremium(t *testing.T) {
 	in := PremiumInputs{
 		CoverCents:            15000,
 		ExpectedEventsPerYear: dec(t, "0.61"),
-		Prob24hGivenEvent:     dec(t, "0.18"),
 		ProbPremisesAffected:  dec(t, "0.22"),
 		RiskMarginRate:        dec(t, "0.35"),
 		ExpenseLoadCents:      dec(t, "150"),
 		T4:                    dec(t, "0.6"),
-		T24:                   dec(t, "1.0"),
 	}
 	p, err := ComputePremium(in)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// share = 0.6 + 0.4*0.18 = 0.672; expected = 0.61*0.672*0.22*15000 = 1352.736
-	// premium = 1352.736/12*1.35 + 150 = 302.1828 -> 302
-	if p.ExpectedAnnualPayoutCents != 1353 || p.PremiumCents != 302 {
+	// share = t4 = 0.6; expected = 0.61*0.6*0.22*15000 = 1207.8
+	// premium = 1207.8/12*1.35 + 150 = 285.8775 -> 286
+	if p.ExpectedAnnualPayoutCents != 1208 || p.PremiumCents != 286 {
 		t.Fatalf("got %+v", p)
 	}
-	want := dec(t, "1352.736")
+	want := dec(t, "1207.8")
 	if p.ExpectedAnnualPayout.Cmp(want) != 0 {
 		t.Errorf("exact expected %v", p.ExpectedAnnualPayout.FloatString(6))
 	}

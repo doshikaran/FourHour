@@ -362,7 +362,7 @@
           }
         ],
         "deviance": {
-          "nb_glm": 130.233105,
+          "nb_glm": 130.233104,
           "poisson_glm": 130.216402,
           "historical_mean": null
         },
@@ -1281,7 +1281,7 @@
     "years": [
       {
         "year": 2023,
-        "premiums_cents": 2708508,
+        "premiums_cents": 2653656,
         "payouts_cents": 0,
         "loss_ratio": 0.0,
         "events": 0,
@@ -1294,22 +1294,22 @@
       },
       {
         "year": 2024,
-        "premiums_cents": 2708508,
+        "premiums_cents": 2653656,
         "payouts_cents": 3495000,
-        "loss_ratio": 1.290378,
+        "loss_ratio": 1.317051,
         "events": 2,
         "events_by_county": {
           "48201": 2,
           "12086": 0,
           "17031": 0
         },
-        "claims_paid": 408
+        "claims_paid": 351
       }
     ]
   },
   "provenance": {
-    "generated_at": "2026-11-12T00:09:46Z",
-    "git_commit": "5a552e3-dirty",
+    "generated_at": "2026-11-12T07:24:09Z",
+    "git_commit": "e9fbacd-dirty",
     "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_backtest",
     "data_sources": [
       {
@@ -1394,6 +1394,6 @@
       2024
     ],
     "seed": 20261111,
-    "notes": "Fitted on 2014-2022, evaluated on 2023-2024 (44 test county-years in the model universe, all included). theta_lo 0.2 qualifying events: 34 in training (exclude_low_coverage), 35 (include_low_coverage), 19 in the test years. Frequency models: Poisson and negative-binomial (NB2) GLMs with a month-of-year effect (one annual harmonic, sin and cos of month) and state effects, and the county's historical mean rate per county-month. Primary variant (exclude_low_coverage): nb_glm: deviance 130.233, log score 0.158, poisson_glm: deviance 130.216, log score 0.158, historical_mean: deviance None, log score None. beats_baselines = False. With thin early years (include_low_coverage): nb_glm: deviance 133.844, log score 0.1614, poisson_glm: deviance 133.837, log score 0.1614, historical_mean: deviance None, log score None. beats_baselines = False. The NB dispersion alpha is estimated at 0.000080, so the NB model collapses to the Poisson model: the data shows no overdispersion at this event count and the NB adds nothing over the Poisson baseline. Illinois is Cook County only and Cook has no theta_lo event in training, so the Illinois coefficient diverges (-19.11 on the log scale) and the Hessian could not be inverted; predictions for Cook are effectively zero. historical_mean: deviance or log score is null because the model predicts 0 events for a county (no training events) that had test events (Harris: the 2024 derecho and Beryl), which makes the score infinite. beats_baselines is true only if the NB model has lower deviance and lower log score than each baseline whose score is finite. Severity: GPD on the excess of the longest run over 4 h, location fixed at 0. The KS p-value is computed with parameters estimated from the same data, so it is optimistic. P(24 h | event): fitted 0.8147, training 0.8235, test 0.6842. Credibility: B\u00fchlmann-Straub across the 22 universe counties with each state's exposure-weighted rate as the collective; s2 = 0.0199055, a = -0.00012341. Because a is not positive, k is null and every credibility weight is 0: the county histories carry no credible signal beyond their state's rate at this event count. Rates are events per county-month. Pool: simulated members (pool of 1000 as in solvency.json, all with a witness), premiums frozen from pricing_table.json, real 2023-2024 theta_lo events in the three demo counties; each member is affected with probability equal to the event's mean share (seed 20261112). Members and their losses are simulated. R2 cost, not priced (CONTRACTS 1.7): if every member had no witness, R2 would pay 50% of the schedule on theta_hi events: 2023: 0 cents on 0 theta_hi events; 2024: 0 cents on 0 theta_hi events. Estimated R2 multiplier (training years, pooled universe): a no-witness member's expected payout is 0.256 times a witness member's (theta_hi rate 0.0556 vs theta_lo rate 0.2361 events per county-year; prob affected 0.3966). Hurricane Beryl (Harris, July 2024) is in the test years; the feed is missing its onset (data_quality.json storm_windows), so its event starts later than the storm did. The models never saw 2023-2024."
+    "notes": "Fitted on 2014-2022, evaluated on 2023-2024 (44 test county-years in the model universe, all included). theta_lo 0.2 qualifying events: 34 in training (exclude_low_coverage), 35 (include_low_coverage), 19 in the test years. Frequency models: Poisson and negative-binomial (NB2) GLMs with a month-of-year effect (one annual harmonic, sin and cos of month) and state effects, and the county's historical mean rate per county-month. Primary variant (exclude_low_coverage): nb_glm: deviance 130.233, log score 0.158, poisson_glm: deviance 130.216, log score 0.158, historical_mean: deviance None, log score None. beats_baselines = False. With thin early years (include_low_coverage): nb_glm: deviance 133.844, log score 0.1614, poisson_glm: deviance 133.837, log score 0.1614, historical_mean: deviance None, log score None. beats_baselines = False. The NB dispersion alpha is estimated at 0.000080, so the NB model collapses to the Poisson model: the data shows no overdispersion at this event count and the NB adds nothing over the Poisson baseline. Illinois is Cook County only and Cook has no theta_lo event in training, so the Illinois coefficient diverges (-19.11 on the log scale) and the Hessian could not be inverted; predictions for Cook are effectively zero. historical_mean: deviance or log score is null because the model predicts 0 events for a county (no training events) that had test events (Harris: the 2024 derecho and Beryl), which makes the score infinite. beats_baselines is true only if the NB model has lower deviance and lower log score than each baseline whose score is finite. Severity: GPD on the excess of the longest run over 4 h, location fixed at 0. The KS p-value is computed with parameters estimated from the same data, so it is optimistic. P(24 h | event): fitted 0.8147, training 0.8235, test 0.6842. Credibility: B\u00fchlmann-Straub across the 22 universe counties with each state's exposure-weighted rate as the collective; s2 = 0.0199055, a = -0.00012341. Because a is not positive, k is null and every credibility weight is 0: the county histories carry no credible signal beyond their state's rate at this event count. Rates are events per county-month. Pool: simulated members (pool of 1000 as in solvency.json, all with a witness, split over the offered demo counties: Harris County, TX, Miami-Dade County, FL), premiums frozen from pricing_table.json, real 2023-2024 theta_lo events; each affected member (probability equal to the event's mean share, seed 20261112) is paid the 4-hour tier only, 60% of cover, no 24-hour top-up (CONTRACTS 1.8). events and events_by_county count events in all three demo counties, including any not offered (no members there, so no payouts). Members and their losses are simulated. R2 cost, not priced (CONTRACTS 1.7): if every member had no witness, R2 would pay 50% of the schedule on theta_hi events: 2023: 0 cents on 0 theta_hi events; 2024: 0 cents on 0 theta_hi events. Estimated R2 multiplier (training years, pooled universe): a no-witness member's expected payout is 0.297 times a witness member's (theta_hi rate 0.0556 vs theta_lo rate 0.2361 events per county-year; prob affected 0.3966). Hurricane Beryl (Harris, July 2024) is in the test years; the feed is missing its onset (data_quality.json storm_windows), so its event starts later than the storm did. The models never saw 2023-2024."
   }
 }

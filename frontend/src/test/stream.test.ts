@@ -62,7 +62,7 @@ describe('mock replay stream', () => {
     await new Promise((r) => setTimeout(r, 10));
     await api.startReplay({ scenario_id: 'derecho-harris-2024', speed: 1_000_000 });
     await until(
-      () => events.filter((x) => x.e.type === 'payout_confirmed').length === 2 && events.some((x) => x.e.type === 'replay_ended'),
+      () => events.filter((x) => x.e.type === 'payout_confirmed').length === 1 && events.some((x) => x.e.type === 'replay_ended'),
       9000,
     );
     handle.close();
@@ -81,12 +81,9 @@ describe('mock replay stream', () => {
     expect(merged.e.data.outage_event_id).not.toBe(firstOpen.e.data.outage_event_id);
     const after = events[events.indexOf(merged) + 1];
     expect(after?.e.type === 'event_opened' && after.e.data.outage_event_id).toBe(firstOpen.e.data.outage_event_id);
-    // Both tiers, 4-hour first.
+    // The prototype pays the 4-hour tier only.
     const claims = events.flatMap((x) => (x.e.type === 'claim_decided' ? [x.e.data.claim] : []));
-    expect(claims.map((c) => [c.tier, c.rule, c.decision])).toEqual([
-      ['t4', 'R1', 'paid'],
-      ['t24', 'R1', 'paid'],
-    ]);
+    expect(claims.map((c) => [c.tier, c.rule, c.decision])).toEqual([['t4', 'R1', 'paid']]);
     const firstId = firstOpen.e.data.outage_event_id;
     expect(claims.every((c) => c.witness_entry_id === null && c.outage_event_id === firstId)).toBe(true);
     // Payout: sent, then confirmed after the configured real-time delay.

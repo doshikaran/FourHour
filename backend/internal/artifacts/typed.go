@@ -177,9 +177,50 @@ func parseTrigger(b []byte) (rules.Params, error) {
 // number literals so money arithmetic stays exact.
 type CountyPricing struct {
 	ExpectedEventsPerYear *json.Number `json:"expected_events_per_year"`
-	Prob24hGivenEvent     *json.Number `json:"prob_24h_given_event"`
 	ProbPremisesAffected  *json.Number `json:"prob_premises_affected"`
 	CredibilityWeight     *json.Number `json:"credibility_weight"`
+	Offered               *bool        `json:"offered"`
+	NotOfferedReason      *string      `json:"not_offered_reason"`
+}
+
+// NoPriceReason is the not_offered_reason for a county missing from
+// pricing_table.json (CONTRACTS.md section 4).
+const NoPriceReason = "No price has been computed for this county."
+
+// Offer is whether a county can be quoted, and why not.
+type Offer struct {
+	Offered bool
+	// Reason is one sentence, nil when offered.
+	Reason *string
+}
+
+// OfferFor says whether fips is offered. A county missing from the table,
+// a null county, or a null offered is not offered; a missing reason falls
+// back to NoPriceReason so a refusal always carries a sentence.
+func (p Pricing) OfferFor(fips string) Offer {
+	c := p.Counties[fips]
+	if c != nil && c.Offered != nil && *c.Offered {
+		return Offer{Offered: true}
+	}
+	reason := NoPriceReason
+	if c != nil && c.NotOfferedReason != nil && strings.TrimSpace(*c.NotOfferedReason) != "" {
+		reason = *c.NotOfferedReason
+	}
+	return Offer{Reason: &reason}
+}
+
+// CountyOffers returns OfferFor for each fips. If pricing_table.json is
+// missing or invalid, every county is not offered with NoPriceReason.
+func CountyOffers(dir string, fips []string) map[string]Offer {
+	pt, err := LoadPricingTable(dir)
+	if err != nil {
+		pt = Pricing{}
+	}
+	out := make(map[string]Offer, len(fips))
+	for _, f := range fips {
+		out[f] = pt.OfferFor(f)
+	}
+	return out
 }
 
 // Rates is pricing_table.rates.
@@ -188,10 +229,10 @@ type Rates struct {
 	ExpenseLoadCents *json.Number `json:"expense_load_cents"`
 }
 
-// PayoutSchedule is pricing_table.payout_schedule.
+// PayoutSchedule is pricing_table.payout_schedule. Validation guarantees
+// its keys are exactly rules.PaidTiers() (only "t4" since CONTRACTS.md 1.8).
 type PayoutSchedule struct {
-	T4  *json.Number `json:"t4"`
-	T24 *json.Number `json:"t24"`
+	T4 *json.Number `json:"t4"`
 }
 
 // Pricing is pricing_table.json.
@@ -235,14 +276,15 @@ type ScheduleSource struct {
 }
 
 // SpecSchedule is the payout schedule stated in SPEC.md section 4 (60% at
-// 4 hours, 100% at 24 hours). It is a product assumption, not a fitted
-// value, and is used only when pricing_table.json has no schedule.
+// 4 hours; the 24-hour top-up was cut). It is a product assumption, not a
+// fitted value, and is used only when pricing_table.json has no schedule.
 func SpecSchedule() rules.Schedule {
-	return rules.Schedule{T4: big.NewRat(6, 10), T24: big.NewRat(1, 1)}
+	return rules.Schedule{T4: big.NewRat(6, 10)}
 }
 
 // LoadSchedule returns pricing_table.payout_schedule, or the SPEC.md
-// schedule with the reason when the artifact is missing or has nulls.
+// schedule with the reason when the artifact is missing, invalid (including
+// a schedule whose tiers differ from the paid tiers) or has nulls.
 func LoadSchedule(dir string) (rules.Schedule, ScheduleSource) {
 	pt, err := LoadPricingTable(dir)
 	if err != nil {
@@ -255,11 +297,55 @@ func LoadSchedule(dir string) (rules.Schedule, ScheduleSource) {
 	if err != nil {
 		return SpecSchedule(), ScheduleSource{Reason: err.Error()}
 	}
-	t24, err := Rat(pt.PayoutSchedule.T24, "payout_schedule.t24")
-	if err != nil {
-		return SpecSchedule(), ScheduleSource{Reason: err.Error()}
+	return rules.Schedule{T4: t4}, ScheduleSource{FromArtifact: true}
+}
+
+// ScheduleShares decodes a payout_schedule object as tier -> exact share,
+// keeping every key it has (so an unpaid tier such as t24 is visible).
+// A null share is ErrNotComputed.
+func ScheduleShares(raw json.RawMessage) (map[string]*big.Rat, error) {
+	var m map[string]*json.Number
+	if err := decodeStrict(raw, &m); err != nil {
+		return nil, fmt.Errorf("payout_schedule: %w", err)
 	}
-	return rules.Schedule{T4: t4, T24: t24}, ScheduleSource{FromArtifact: true}
+	if m == nil {
+		return nil, fmt.Errorf("payout_schedule: %w", ErrNotComputed)
+	}
+	out := make(map[string]*big.Rat, len(m))
+	for k, n := range m {
+		r, err := Rat(n, "payout_schedule."+k)
+		if err != nil {
+			return nil, err
+		}
+		out[k] = r
+	}
+	return out, nil
+}
+
+// CheckScheduleParity returns an error unless priced (the schedule the
+// premium is computed from) and paid (the share the rule engine pays per
+// tier) have the same tiers with exactly equal shares.
+func CheckScheduleParity(priced, paid map[string]*big.Rat) error {
+	var problems []string
+	for tier, share := range priced {
+		p, ok := paid[tier]
+		switch {
+		case !ok:
+			problems = append(problems, fmt.Sprintf("tier %s is priced but never paid", tier))
+		case p.Cmp(share) != 0:
+			problems = append(problems, fmt.Sprintf("tier %s is priced at %s but paid at %s", tier, share.RatString(), p.RatString()))
+		}
+	}
+	for tier := range paid {
+		if _, ok := priced[tier]; !ok {
+			problems = append(problems, fmt.Sprintf("tier %s is paid but not priced", tier))
+		}
+	}
+	if len(problems) > 0 {
+		sort.Strings(problems)
+		return fmt.Errorf("payout schedule parity: %s", strings.Join(problems, "; "))
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------------------

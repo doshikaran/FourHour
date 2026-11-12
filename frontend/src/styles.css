@@ -84,6 +84,8 @@
 
 html {
   font-size: 18px;
+  /* Reserve the scrollbar's space so the page does not jump sideways when content arrives. */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -222,6 +224,9 @@ code,
   max-width: 1240px;
   margin: 0 auto;
   padding: 32px 32px 64px;
+  /* Keep the footer below the fold while a page loads, so it does not jump down when data arrives. */
+  min-height: calc(100vh - 68px);
+  box-sizing: border-box;
 }
 
 .site-footer {
@@ -1050,4 +1055,24 @@ table.plain th.num {
 .cell-link {
   font-family: var(--mono);
   font-size: 0.85em;
+}
+
+/* ---------- evidence and live guide ---------- */
+.evidence-split {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .evidence-split {
+    grid-template-columns: 1fr;
+  }
+}
+.guide-steps {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+.guide-steps li + li {
+  margin-top: 4px;
 }

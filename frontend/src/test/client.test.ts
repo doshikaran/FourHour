@@ -19,12 +19,14 @@ describe('createHttpApi', () => {
     await api.deviceEntries('dev_fixtureaaaab');
     await api.analytics('basis-risk');
     await api.chargePremium('pol_fixtureaaaab', { period: '2026-12' });
+    await api.demo();
     expect(calls.map((c) => `${c.init?.method} ${c.url}`)).toEqual([
       'GET http://x/api/counties',
       'POST http://x/api/quotes',
       'GET http://x/api/witness/devices/dev_fixtureaaaab/entries?limit=200',
       'GET http://x/api/analytics/basis-risk',
       'POST http://x/api/policies/pol_fixtureaaaab/charge-premium',
+      'GET http://x/api/demo',
     ]);
     expect(calls[1]?.init?.body).toBe('{"fips":"99001","cover_cents":15000}');
   });

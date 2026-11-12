@@ -34,7 +34,9 @@ EVENT_MERGE_HOURS = 72  # D2: hours clause
 DROPOUT_MAX_FRACTION = 0.1  # CONTRACTS 1.6 section 3, set by the humans on 2026-11-12
 QUALIFY_HOURS = 4  # USDA 4-hour line
 T24_HOURS = 24
-PAYOUT_SCHEDULE = {"t4": 0.6, "t24": 1.0}  # SPEC section 4; the 60/40 split is a product assumption
+# SPEC section 4, CONTRACTS 1.8: only the 4-hour tier is paid and priced (60% is a product
+# assumption). The 24-hour top-up was cut on 2026-11-12; T24_HOURS stays for the severity report.
+PAYOUT_SCHEDULE = {"t4": 0.6}
 R2_FACTOR = 0.5  # SPEC section 4, rule R2
 POOL_MEMBERS = 1000  # SPEC 5.7 default pool size
 COVERS_CENTS = (5000, 15000, 30000)

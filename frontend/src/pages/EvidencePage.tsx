@@ -1,22 +1,35 @@
 import { ApiError } from '../api/client';
 import { useApi } from '../api/context';
-import type { AnalyticsName, TriggerParamsArtifact } from '../api/types';
+import type {
+  AnalyticsArtifacts,
+  AnalyticsName,
+  BacktestArtifact,
+  BasisRiskArtifact,
+  DataQualityArtifact,
+  PricingTableArtifact,
+  SolvencyArtifact,
+  TriggerParamsArtifact,
+} from '../api/types';
+import { BacktestPanel, BasisRiskPanel, DataQualityPanel, PricingPanel, SolvencyPanel } from './EvidencePanels';
 import { PageHeader } from '../components/Layout';
 import { ErrorState, Loading, NotComputed, ProvenanceDetails, RealDataChip, thetaHiWording } from '../components/ui';
 import { formatRate, formatShare } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
 
+// Honest order (final pass): basis risk first, then the backtest with its negative result, then
+// solvency, pricing, trigger design and data quality.
 const PANELS: { name: AnalyticsName; title: string; what: string }[] = [
+  { name: 'basis-risk', title: 'Basis risk', what: 'Indian premises data: how often an index misses or wrongly pays an outage, with and without a witness.' },
   { name: 'backtest', title: 'Backtest', what: 'Frequency and severity models scored on 2023–2024, years they never saw.' },
-  { name: 'pricing', title: 'Pricing', what: 'How each county’s premium is built.' },
-  { name: 'solvency', title: 'Solvency', what: 'Simulated years of the whole pool: chance of ruin and capital needed.' },
-  { name: 'basis-risk', title: 'Basis risk', what: 'Indian premises data: how often an index misses or wrongly pays an outage.' },
+  { name: 'solvency', title: 'Solvency', what: 'Simulated years of the whole pool: chance of ruin, capital needed and a stop-loss layer.' },
+  { name: 'pricing', title: 'Pricing', what: 'How each county’s premium is built, and which counties are not offered.' },
   { name: 'trigger', title: 'Trigger design', what: 'How the two thresholds were chosen on training years.' },
-  { name: 'data-quality', title: 'Data quality', what: 'Coverage of the outage data per county and year, and gaps.' },
+  { name: 'data-quality', title: 'Data quality', what: 'Coverage of the outage data per county and year, gaps, and data checks.' },
 ];
 
-// E1 (phase 5) builds the panels. Until then each section shows whether its artifact exists and
-// where it came from; a missing artifact shows "not computed".
+// E1: each panel reads its artifact; a missing artifact shows "not computed". One panel per row so
+// the tables stay readable.
+
 export function EvidencePage() {
   return (
     <>
@@ -24,7 +37,7 @@ export function EvidencePage() {
         title="Evidence"
         purpose="Backtest, pricing, solvency, basis-risk and data-quality results, each with where it came from."
       />
-      <div className="grid-2">
+      <div className="stack">
         {PANELS.map((p) => (
           <Panel key={p.name} {...p} />
         ))}
@@ -36,6 +49,9 @@ export function EvidencePage() {
 function Panel({ name, title, what }: { name: AnalyticsName; title: string; what: string }) {
   const api = useApi();
   const s = useAsync(() => api.analytics(name), `analytics:${name}`);
+  const counties = useAsync(() => api.counties(), 'counties');
+  const names: Record<string, string> = {};
+  if (counties.status === 'ok') for (const c of counties.data.counties) names[c.fips] = `${c.name}, ${c.state}`;
   return (
     <section className="card" aria-label={title}>
       <h2>{title}</h2>
@@ -49,15 +65,26 @@ function Panel({ name, title, what }: { name: AnalyticsName; title: string; what
         ) : (
           <ErrorState what={`the ${title.toLowerCase()} result`} error={s.error} onRetry={s.reload} />
         ))}
-      {s.status === 'ok' && name === 'trigger' && <TriggerPanel t={s.data as TriggerParamsArtifact} />}
-      {s.status === 'ok' && name !== 'trigger' && (
-        <>
-          <p className="small">The detailed panel arrives with task E1.</p>
-          <ProvenanceDetails provenance={s.data.provenance} />
-        </>
-      )}
+      {s.status === 'ok' && <Body name={name} data={s.data} names={names} />}
     </section>
   );
+}
+
+function Body({ name, data, names }: { name: AnalyticsName; data: AnalyticsArtifacts[AnalyticsName]; names: Record<string, string> }) {
+  switch (name) {
+    case 'trigger':
+      return <TriggerPanel t={data as TriggerParamsArtifact} />;
+    case 'backtest':
+      return <BacktestPanel a={data as BacktestArtifact} names={names} />;
+    case 'pricing':
+      return <PricingPanel a={data as PricingTableArtifact} names={names} />;
+    case 'solvency':
+      return <SolvencyPanel a={data as SolvencyArtifact} />;
+    case 'basis-risk':
+      return <BasisRiskPanel a={data as BasisRiskArtifact} />;
+    case 'data-quality':
+      return <DataQualityPanel a={data as DataQualityArtifact} />;
+  }
 }
 
 const val = (v: number | null, f: (n: number) => string) => (v === null ? <NotComputed /> : f(v));

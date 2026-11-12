@@ -122,7 +122,9 @@ describe('/enrol', () => {
     const select = await screen.findByLabelText('County');
     fireEvent.change(select, { target: { value: '99001' } });
     await screen.findByText(/a month for \$150\.00 cover/);
-    expect(screen.getByText('Chance an outage reaches 24 hours')).toBeTruthy();
+    expect(screen.getByText('Share of cover paid per qualifying outage')).toBeTruthy();
+    // 1.8: the price is built on the tier that is paid; no 24-hour payment is mentioned anywhere on /enrol.
+    expect(document.body.textContent).not.toMatch(/24.hour|24 h(?![a-z])/i);
     expect(screen.getByText(/Where this price comes from/)).toBeTruthy();
     expect(await screen.findByText(/product assumption/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Business or owner name'), { target: { value: 'Fixture Taco Truck' } });
@@ -139,6 +141,39 @@ describe('/enrol', () => {
     fireEvent.change(await screen.findByLabelText('County'), { target: { value: '99003' } });
     await screen.findByText(/has not produced every input for this county/);
     expect(screen.getAllByText('not computed').length).toBeGreaterThan(0);
+  });
+
+  it('shows a county with offered=false as unavailable with its reason and requests no quote (1.8)', async () => {
+    window.history.pushState(null, '', '/enrol');
+    api = createMockApi({ latencyMs: 0 });
+    const quoted: string[] = [];
+    const base = api;
+    const spy: FourHourApi = { ...base, quote: (req) => (quoted.push(req.fips), base.quote(req)) };
+    render(<App api={spy} />);
+    const select = (await screen.findByLabelText('County')) as HTMLSelectElement;
+    const opt = [...select.options].find((o) => o.value === '99004');
+    expect(opt?.disabled).toBe(true);
+    expect(opt?.textContent).toMatch(/not offered/);
+    expect(screen.getByText(/no qualifying event in this fixture credibility group/)).toBeTruthy();
+    fireEvent.change(select, { target: { value: '99004' } });
+    expect(await screen.findByText('Not offered in this county')).toBeTruthy();
+    expect(quoted).toEqual([]);
+    expect((screen.getByRole('button', { name: 'Continue to PayPal' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('handles a 422 county_not_offered from the quote endpoint', async () => {
+    window.history.pushState(null, '', '/enrol');
+    api = createMockApi({ latencyMs: 0 });
+    const base = api;
+    // The county list says offered, but the backend (newer pricing table) refuses the quote.
+    const stale: FourHourApi = {
+      ...base,
+      counties: () => base.counties().then((r) => ({ counties: r.counties.map((c) => ({ ...c, offered: true, not_offered_reason: null })) })),
+    };
+    const { container } = render(<App api={stale} />);
+    fireEvent.change(await screen.findByLabelText('County'), { target: { value: '99004' } });
+    expect(await screen.findByText('Not offered in this county')).toBeTruthy();
+    expect(container.querySelectorAll('.state-error')).toHaveLength(0);
   });
 
   it('shows "not computed" for a null data coverage', async () => {
@@ -183,6 +218,55 @@ describe('coverage limits and thresholds (CONTRACTS 1.7)', () => {
     expect(panel.textContent).toMatch(/edge of the search grid, not an optimum/);
     expect(within(panel).getAllByText('Grid edge, no interior optimum').length).toBe(1);
     expect(within(panel).getAllByRole('row')).toHaveLength(3);
+  });
+});
+
+describe('evidence order and live demo guide (final pass)', () => {
+  it('leads /evidence with basis risk and its caveats, then the backtest verdict', async () => {
+    const { container } = renderAt('/evidence');
+    await screen.findByRole('region', { name: 'Basis risk' });
+    const titles = [...container.querySelectorAll('section.card > h2')].map((h) => h.textContent);
+    expect(titles.slice(0, 2)).toEqual(['Basis risk', 'Backtest']);
+    expect(screen.getByRole('complementary', { name: 'Caveats for this table' }).textContent).toMatch(/upper bound/);
+  });
+
+  it('shows the demo guide on /live with a link to the demo witness', async () => {
+    renderAt('/live');
+    const guide = await screen.findByRole('region', { name: 'Run the demo' });
+    const link = within(guide).getByRole('link', { name: `/witness/${fixturePolicy.id}` });
+    expect(link.getAttribute('href')).toBe(`/witness/${fixturePolicy.id}`);
+    await waitFor(() => expect(guide.textContent).toMatch(/at or above 50\.0% for 4 hours/));
+    expect(guide.textContent).toMatch(/real PayPal sandbox payout, drawn from a finite sandbox balance/);
+  });
+
+  it('hides the demo guide when the backend has no demo policy', async () => {
+    window.history.pushState(null, '', '/live');
+    api = createMockApi({ latencyMs: 0 });
+    const none: FourHourApi = { ...api, demo: () => Promise.resolve({ policy_id: null }) };
+    render(<App api={none} />);
+    await screen.findByRole('heading', { level: 1, name: 'Live replay' });
+    await waitFor(() => expect(screen.getByTestId('stream-status').dataset.status).toBe('open'));
+    expect(screen.queryByRole('region', { name: 'Run the demo' })).toBeNull();
+  });
+});
+
+describe('/witness/:policyId when the server forgets the device', () => {
+  it('offers to register a new device after a 404 device_not_found on upload', async () => {
+    renderAt(`/witness/${fixturePolicy.id}`);
+    fireEvent.click(await screen.findByRole('button', { name: 'Set up this device as the witness' }));
+    await waitFor(() => expect(screen.getByTestId('entries-uploaded').textContent).toBe('1'));
+    const m = api as MockApi;
+    const realPost = m.postEntries;
+    m.postEntries = () =>
+      Promise.reject(new ApiError({ status: 404, code: 'device_not_found', message: 'no device', paypalDebugId: null, endpoint: 'POST /witness/entries' }));
+    fireEvent.click(screen.getByRole('button', { name: /Power is out/ }));
+    const again = await screen.findByRole('button', { name: 'Register a new device' });
+    expect(screen.getByText(/The server no longer knows this device/)).toBeTruthy();
+    m.postEntries = realPost;
+    fireEvent.click(again);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Register a new device' })).toBeNull());
+    await waitFor(() => expect(screen.getByTestId('entries-uploaded').textContent).toBe('1'));
+    expect(screen.getByTestId('entries-total').textContent).toBe('1');
   });
 });
 

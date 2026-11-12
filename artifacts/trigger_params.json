@@ -1602,8 +1602,8 @@
     }
   ],
   "provenance": {
-    "generated_at": "2026-11-11T23:54:17Z",
-    "git_commit": "5a552e3-dirty",
+    "generated_at": "2026-11-12T07:23:58Z",
+    "git_commit": "e9fbacd-dirty",
     "code": "ml/fourhour_ml/trigger.py, ml/fourhour_ml/build.py:build_trigger_params",
     "data_sources": [
       {

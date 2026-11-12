@@ -1,6 +1,6 @@
 /**
  * The 4-hour clocks: how long the current run has been at or above each threshold, against the
- * 4-hour line and then the 24-hour line. Display only; the decision comes from claim_decided.
+ * 4-hour line. The prototype pays the 4-hour tier only. Display only; the decision comes from claim_decided.
  */
 import { NotComputed } from '../components/ui';
 import { formatClockUtc, formatHours, formatHoursClock } from '../lib/format';
@@ -63,17 +63,16 @@ export function RunClock({
   const runs = summariseRuns(series, theta, { gapBridgeMinutes, dropoutMaxFraction });
   const cur = runs.current;
   const hours = cur?.hours ?? 0;
-  const target = hours >= 4 ? 24 : 4;
-  const done = hours >= 24;
+  const done = hours >= 4;
   return (
     <div className="clock" data-testid={`clock-${title.startsWith('Strong') ? 'hi' : 'lo'}`}>
-      <Ring fraction={done ? 1 : hours / target} done={done || (hours >= 4 && target === 4)} />
+      <Ring fraction={done ? 1 : hours / 4} done={done} />
       <div>
         <div className="small muted">{title}</div>
         <div className="clock-value">
           {cur ? (
             <>
-              {formatHoursClock(hours)} <span className="small muted">of {target}:00</span>
+              {formatHoursClock(hours)} <span className="small muted">of 4:00</span>
             </>
           ) : (
             <span className="muted">Not above</span>

@@ -87,8 +87,8 @@
     "end": "2018-12-31"
   },
   "provenance": {
-    "generated_at": "2026-11-12T00:56:42Z",
-    "git_commit": "5a552e3-dirty",
+    "generated_at": "2026-11-12T07:28:27Z",
+    "git_commit": "e9fbacd-dirty",
     "code": "ml/fourhour_ml/basis.py, ml/fourhour_ml/esmi.py, ml/fourhour_ml/build.py:build_basis_risk",
     "data_sources": [
       {

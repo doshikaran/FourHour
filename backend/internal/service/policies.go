@@ -90,7 +90,7 @@ func (s *Service) GetMember(ctx context.Context, id string) (model.Member, error
 // Breakdown is the quote breakdown (CONTRACTS.md section 4).
 type Breakdown struct {
 	ExpectedEventsPerYear     json.Number  `json:"expected_events_per_year"`
-	Prob24hGivenEvent         json.Number  `json:"prob_24h_given_event"`
+	ExpectedPayoutShare       json.Number  `json:"expected_payout_share"`
 	ProbPremisesAffected      json.Number  `json:"prob_premises_affected"`
 	ExpectedAnnualPayoutCents int64        `json:"expected_annual_payout_cents"`
 	CredibilityWeight         *json.Number `json:"credibility_weight"`
@@ -109,7 +109,9 @@ type Quote struct {
 }
 
 // Quote prices a cover from pricing_table.json with the CONTRACTS.md
-// section 4 formula, in exact decimal arithmetic.
+// section 4 formula, in exact decimal arithmetic. The expected payout share
+// is payout_schedule.t4, the only tier paid. A county that is not offered
+// (or not in the table) is 422 county_not_offered with its reason.
 func (s *Service) Quote(ctx context.Context, fips string, cover int64) (Quote, error) {
 	if !fipsRe.MatchString(fips) {
 		return Quote{}, newErr(http.StatusBadRequest, "invalid_fips", "fips must be a 5-digit county code.")
@@ -130,10 +132,10 @@ func (s *Service) Quote(ctx context.Context, fips string, cover int64) (Quote, e
 	if pt.ModelVersion == nil {
 		return Quote{}, notComputed("model_version")
 	}
-	c, ok := pt.Counties[fips]
-	if !ok {
-		return Quote{}, newErr(http.StatusNotFound, "county_not_priced", "County "+fips+" is not in pricing_table.json.")
+	if off := pt.OfferFor(fips); !off.Offered {
+		return Quote{}, newErr(http.StatusUnprocessableEntity, "county_not_offered", *off.Reason)
 	}
+	c := pt.Counties[fips]
 	if c == nil || pt.Rates == nil || pt.PayoutSchedule == nil {
 		return Quote{}, notComputed("A pricing input for " + fips)
 	}
@@ -144,12 +146,10 @@ func (s *Service) Quote(ctx context.Context, fips string, cover int64) (Quote, e
 		name string
 	}{
 		{&in.ExpectedEventsPerYear, c.ExpectedEventsPerYear, "expected_events_per_year"},
-		{&in.Prob24hGivenEvent, c.Prob24hGivenEvent, "prob_24h_given_event"},
 		{&in.ProbPremisesAffected, c.ProbPremisesAffected, "prob_premises_affected"},
 		{&in.RiskMarginRate, pt.Rates.RiskMarginRate, "risk_margin_rate"},
 		{&in.ExpenseLoadCents, pt.Rates.ExpenseLoadCents, "expense_load_cents"},
 		{&in.T4, pt.PayoutSchedule.T4, "payout_schedule.t4"},
-		{&in.T24, pt.PayoutSchedule.T24, "payout_schedule.t24"},
 	} {
 		r, err := artifacts.Rat(f.n, f.name)
 		if errors.Is(err, artifacts.ErrNotComputed) {
@@ -167,7 +167,7 @@ func (s *Service) Quote(ctx context.Context, fips string, cover int64) (Quote, e
 	return Quote{
 		FIPS: fips, CoverCents: cover, PremiumCents: p.PremiumCents, ModelVersion: *pt.ModelVersion,
 		Breakdown: Breakdown{
-			ExpectedEventsPerYear: *c.ExpectedEventsPerYear, Prob24hGivenEvent: *c.Prob24hGivenEvent,
+			ExpectedEventsPerYear: *c.ExpectedEventsPerYear, ExpectedPayoutShare: *pt.PayoutSchedule.T4,
 			ProbPremisesAffected: *c.ProbPremisesAffected, ExpectedAnnualPayoutCents: p.ExpectedAnnualPayoutCents,
 			CredibilityWeight: c.CredibilityWeight, RiskMarginRate: *pt.Rates.RiskMarginRate, ExpenseLoadCents: *pt.Rates.ExpenseLoadCents,
 		},

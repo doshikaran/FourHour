@@ -4,7 +4,14 @@ Go 1.27 or later. Everything below runs from `backend/`. The service reads only 
 
 ## Run the backend for the browser demo (sandbox)
 
-1. Seed the demo member and its test-cover policy. This needs `DEMO_VAULT_TOKEN` and `SANDBOX_MEMBER_EMAIL` and refuses to run without them. It makes no PayPal call unless you pass `-charge`.
+**Startup demo policy: a real sandbox charge on every new database.** When `DEMO_VAULT_TOKEN` is set, the server at startup creates (if none exists) a demo member (`SANDBOX_MEMBER_EMAIL`, payouts to `SANDBOX_PAYOUT_EMAIL`, or to `SANDBOX_MEMBER_EMAIL` if that is not set) and an active Harris County (`48201`) policy with `cover_cents` 5000, priced by the normal quote from `pricing_table.json`. It then charges the first premium through the normal charge path (P4, `PayPal-Request-Id: prem-{policy_id}-{period}`) against the saved wallet. `GET /api/demo` returns it, or `{"policy_id": null}`.
+
+- On the same database it is idempotent: a restart finds the same policy (one row in the internal `demo_policy` table, a single-slot primary key) and charges nothing. A first premium whose outcome was unknown (a 5xx or timeout) is resent with the same key; one that completed or was refused is never charged again by startup. Later months are not charged at startup.
+- **On a new database it makes a real sandbox premium charge** (the quoted monthly premium for $50 cover, as priced from `pricing_table.json`). A free host that wipes its disk on restart (for example Render's free web service with SQLite on local disk) creates a new demo policy and charges again **on every restart**. Check the sandbox buyer balance, or unset `DEMO_VAULT_TOKEN` there.
+- If the charge fails, the error is logged with its `paypal_debug_id` and the server starts anyway. If Harris County is not offered or not priced (`county_not_offered`, `pricing_not_computed`), no demo policy is created; that is logged too.
+- The 100-cent test cover below is separate and is still created only by the seed command.
+
+1. Seed the demo member and its test-cover policy with `go run ./cmd/fourhour seed [-charge] [flags]`. The seed is the **only** way to create the 100-cent test cover; `POST /api/policies` always prices from `pricing_table.json`. It needs `DEMO_VAULT_TOKEN` and `SANDBOX_MEMBER_EMAIL` and refuses to run without them; `-charge` also needs `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`. Like the server, it is sandbox-only: it refuses any `PAYPAL_BASE_URL` other than the sandbox URL. It makes no PayPal call unless you pass `-charge`.
 
    ```
    go run ./cmd/fourhour seed -env-file ../.env
@@ -13,10 +20,18 @@ Go 1.27 or later. Everything below runs from `backend/`. The service reads only 
 
    Flags: `-fips 48201` (default Harris County), `-charge`, `-env-file`. The seed is **idempotent**. A second run finds the same active `test-cover` policy for that member email and county and writes nothing. A second `-charge` in the same month returns the existing charge and calls PayPal again only if the earlier call's outcome was unknown, in which case it reuses the same `PayPal-Request-Id`. The policy has `cover_cents` 100, `premium_cents` 100 and `model_version` `test-cover`. Payouts go to `SANDBOX_PAYOUT_EMAIL`, or to `SANDBOX_MEMBER_EMAIL` if that is not set.
 
-2. Start the server:
+2. Start the server.
+
+   macOS / Linux / Git Bash:
 
    ```
    FRONTEND_URL=http://localhost:5173 go run ./cmd/fourhour -env-file ../.env
+   ```
+
+   Windows PowerShell:
+
+   ```
+   $env:FRONTEND_URL = "http://localhost:5173"; go run ./cmd/fourhour -env-file ../.env
    ```
 
    It listens on `:$PORT` (default 8080; `-addr` overrides). `FRONTEND_URL` is the only CORS origin and the redirect target after vault approval, so set it to wherever the frontend runs. `ARTIFACTS_DIR` defaults to `../artifacts` and is re-read on every request, so new artifacts from `ml/` appear without a restart. `DATABASE_URL` defaults to `./fourhour.db`. Seed and server must use the same `DATABASE_URL`.
@@ -37,7 +52,8 @@ Without `PAYPAL_WEBHOOK_ID`, webhooks are stored unverified and change nothing, 
 
 - `fixture-outage-harris` (embedded in `internal/artifacts/fixtures/scenarios/`) is a hand-written series, not EAGLE-I data. It is dated in the year 2000 and listed with `is_fixture: true`. Its 95% plateau crosses `theta_hi` under both the real and the fixture trigger parameters.
 - `fixture-trigger_params.json` is used only when `artifacts/trigger_params.json` is missing, invalid or has a null value. The server logs a warning when it falls back. It is never listed in `artifacts_loaded` or served by `/api/analytics/trigger`.
-- The payout schedule comes from `pricing_table.json`. If that file is missing, it falls back to `SPEC.md` section 4 (60% at 4 hours, 100% at 24 hours), with a logged warning.
+- The payout schedule comes from `pricing_table.json`, which must be exactly `{"t4": ...}`: the 24-hour tier is cut, and a schedule with any tier the rule engine does not pay (such as `t24`) makes the file invalid, so the premium never prices what is not paid. If the file is missing or invalid, the replay falls back to `SPEC.md` section 4 (60% at 4 hours) with a logged warning, and quotes fail. `TestPricedScheduleEqualsPaidSchedule` and `TestRealPricingTableScheduleParity` check that the priced schedule equals what the rule engine pays.
+- Counties: `GET /api/counties` returns `offered` and `not_offered_reason` from `pricing_table.json`; a county missing from it is not offered. Quotes and policies for a county not offered answer `422 county_not_offered` with the reason.
 
 ## Tests
 
@@ -46,13 +62,19 @@ go vet ./...
 go test -race ./...
 ```
 
+`-race` needs cgo and a C compiler (`CGO_ENABLED=1` and `gcc` on `PATH`; on Windows, for example WinLibs mingw64). Without one, run `go test ./...`. The service itself builds without cgo.
+
+`TestParityDerechoHarris2024` (in `internal/artifacts`) reads the real `../artifacts/scenarios/derecho-harris-2024.json` and `trigger_params.json` and checks the detector gives the same run as the ML pipeline. It skips if those files are absent.
+
 PayPal calls in the unit tests go to `internal/paypal/paypaltest`, a fake server with **hand-written** responses based on the PayPal API reference. The repeated-order and repeated-`sender_batch_id` behaviours follow what spikes S1 and S2 observed in the sandbox. None of the responses were recorded from the sandbox.
 
 **Opt-in sandbox integration test** (off by default; it moves real sandbox money: a $1.00 charge and a $0.30 payout per run):
 
 ```
-FOURHOUR_SANDBOX_IT=1 go test -race -count=1 -timeout 6m -run TestSandboxLoop -v ./internal/integration/
+FOURHOUR_SANDBOX_IT=1 go test -count=1 -timeout 6m -run TestSandboxLoop -v ./internal/integration/
 ```
+
+Windows PowerShell: `$env:FOURHOUR_SANDBOX_IT = "1"; go test -count=1 -timeout 6m -run TestSandboxLoop -v ./internal/integration/` (then `Remove-Item Env:FOURHOUR_SANDBOX_IT`). Add `-race` if a C compiler is available. It reads `../.env` and needs `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `DEMO_VAULT_TOKEN`, `SANDBOX_MEMBER_EMAIL` and `SANDBOX_PAYOUT_EMAIL`.
 
 It runs seed, premium charge (P4), fixture replay, rule R2, payout (P5) and confirmation by polling (P6) against the real sandbox, using a fresh temporary database and an empty artifacts directory. It prints every `paypal-debug-id` and never prints the client secret, the access token or `DEMO_VAULT_TOKEN`.
 

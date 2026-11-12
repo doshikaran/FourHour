@@ -1,6 +1,6 @@
 # FourHour: contracts
 
-Version: 1.7
+Version: 1.8
 
 This file is the single source of truth for every interface between the backend, the frontend, the ML pipeline and PayPal. Change it before changing code. Only the lead edits it (see `CLAUDE.md`).
 
@@ -8,6 +8,7 @@ Changelog:
 - 1.0: initial.
 - 1.1: backend moves from Python to Go; ML stays in Python and meets the backend only at `artifacts/`. No field, endpoint, event, key or route changed. Section 2: `DATABASE_URL` default is now a plain SQLite file path for the `modernc.org/sqlite` driver. Section 6: signature verification described for Go `crypto/ecdsa` (raw r and s, JWK x and y) instead of Python DER; the hash input string must be built explicitly to match `JSON.stringify`, not with `encoding/json`. Section 8: the backend validates artifacts at startup and reports a missing or malformed file through `/api/health` instead of crashing.
 - 1.2: answers to Gate 1 (K4) questions. Section 1: ID prefixes `wen_` and `led_`. Section 2: added `PORT` and `VITE_USE_MOCK`. Section 3: nullability stated; `refunds.created_at` added; `ledger_entries` unique on (`kind`, `ref_id`); rejected witness entries are stored (unparseable ones are not; they are rejected as `malformed`) and the (`device_id`, `seq`) uniqueness applies to valid rows only. Section 4: policy responses never include vault tokens; `/api/health` may return `503 database_unavailable`; scenarios carry `is_fixture`; `GET /api/claims/{id}` shape fixed. Section 5: `snapshot` body fixed and now includes claims decided so far. Section 8: `artifacts_loaded` names; `pricing_table.counties` keyed by FIPS; `stop_loss` keys in cents; basis-risk notes live in `provenance.notes`. The remaining artifact inner shapes are still open (see the note under the table).
+- 1.8: (humans' final pass, 2026-11-12) Price what is delivered: the 24-hour tier is cut, so `pricing_table.payout_schedule` is `{ "t4": 0.6 }` only, the expected payout share is `t4`, and `prob_24h_given_event` leaves the pricing table and the quote breakdown (it stays in `backtest.json` severity). Counties with no qualifying event in their credibility group are not offered: `pricing_table.counties[fips]` adds `offered` and `not_offered_reason`, `GET /api/counties` returns them, quotes and policies for such a county return `422 county_not_offered`. `solvency.json` adds `capital_assumption`; `data_quality.json` adds `findings`. New demo policy created at startup and `GET /api/demo`.
 - 1.7: Section 8.1: `trigger_params.json` adds `theta_hi_status` and `sensitivity`; frequency and pricing count `theta_lo` events and price a member with a witness; R2 cost is reported, not priced (humans' decision, 2026-11-12, after M2 chose 0.20 / 0.90). Section 7: payout status follows the item status.
 - 1.6: Section 3: partial-feed dropout rule (decided by the humans on 2026-11-12). Section 8: `trigger_params.json` adds `dropout_max_fraction` (0.1).
 - 1.5: Section 3: only qualifying runs (4 hours or more) are merged by the hours clause, matching `SPEC.md` section 4 (1.3 wrongly said all runs). Section 8: every open artifact shape is now pinned (8.1); the basis-risk schemes move under `schemes`; `GET /api/counties` reads `data_coverage` from `data_quality.json` `county_coverage`. Section 5: new `event_merged` stream event. Product parameters set by the humans (2026-11-12): witness share 0.5, false confirmation rate 0.10, expense load 100 cents a month, cost of capital 6%.
@@ -58,6 +59,10 @@ Enums are stored as strings. A field that only gets a value later (PayPal IDs, e
 
 **Test cover.** The seed command (sandbox only) may create a policy with `cover_cents` 100 and `premium_cents` 100, so integration runs charge and pay at most $1.00. Such a policy has `model_version` `test-cover` and is labelled "test cover" in the UI. `POST /api/quotes` and `POST /api/policies` never accept 100.
 
+**Demo policy.** When `DEMO_VAULT_TOKEN` is set, the backend at startup creates, if none exists, a demo member (`SANDBOX_MEMBER_EMAIL`, payouts to `SANDBOX_PAYOUT_EMAIL`) and an active policy for Harris County (`48201`) with `cover_cents` 5000, priced by the normal quote, and charges its first premium through the normal charge path and idempotency key (`prem-{policy_id}-{period}`). Its `model_version` is the pricing table's, not `test-cover`. It is found again by `GET /api/demo`. Startup charges only that first premium (or retries it with the same key when its outcome was unknown); it never charges later months. The 100-cent test cover is still created only by the seed command.
+
+**demo_policy** (internal, added in 1.8): `slot` (always 1, primary key, so at most one row), `policy_id`, `created_at`. It marks the demo policy so a restart on the same database creates no second one.
+
 **Payout amounts** are `cover_cents` × the schedule share × the rule's factor (R2: 50%), computed in integer arithmetic and rounded down to a whole cent.
 
 **premium_charges**: `id`, `policy_id`, `period` (`YYYY-MM`), `amount_cents`, `request_id` (unique), `paypal_order_id`, `paypal_capture_id`, `status` (`created` | `completed` | `failed` | `refunded`), `created_at`. Unique on (`policy_id`, `period`).
@@ -93,7 +98,8 @@ All bodies are JSON. `200` unless stated.
 `GET /api/health` → `{ "status": "ok", "paypal_env": "sandbox", "artifacts_loaded": ["pricing_table", ...] }`
 `artifacts_loaded` lists the section 8 top-level artifacts that loaded and passed validation, by file name without `.json`. Scenario files are listed by `/api/replay/scenarios`, not here. If the database cannot be reached it returns `503` with code `database_unavailable` in the error shape.
 
-`GET /api/counties` → `{ "counties": [ { "fips": "48201", "name": "Harris County", "state": "TX", "data_coverage": 0.97 } ] }`
+`GET /api/counties` → `{ "counties": [ { "fips": "48201", "name": "Harris County", "state": "TX", "data_coverage": 0.97, "offered": true, "not_offered_reason": null } ] }`
+`offered` and `not_offered_reason` (one sentence, null when offered) come from `pricing_table.json`; a county missing from it is `offered: false` with reason "No price has been computed for this county."
 
 `POST /api/quotes`
 Request: `{ "fips": "48201", "cover_cents": 15000 }`
@@ -107,7 +113,7 @@ Response:
   "model_version": "2026-11-11a",
   "breakdown": {
     "expected_events_per_year": 0.61,
-    "prob_24h_given_event": 0.18,
+    "expected_payout_share": 0.6,
     "prob_premises_affected": 0.22,
     "expected_annual_payout_cents": 1410,
     "credibility_weight": 0.74,
@@ -120,9 +126,11 @@ Response:
 
 The numbers above only illustrate the shape. Real values come from `artifacts/pricing_table.json`.
 
-The backend computes the premium from `pricing_table.json` exactly as `SPEC.md` 5.5: expected payout share = `t4` + (`t24` − `t4`) × `prob_24h_given_event`; `expected_annual_payout_cents` = `expected_events_per_year` × expected payout share × `prob_premises_affected` × `cover_cents`; `premium_cents` = `expected_annual_payout_cents` / 12 × (1 + `risk_margin_rate`) + `expense_load_cents`. It computes in exact decimal arithmetic from the JSON values and rounds only the final premium, half up, to a whole cent. If any input is null, the quote returns `422` with code `pricing_not_computed`.
+The backend computes the premium from `pricing_table.json` exactly as `SPEC.md` 5.5: expected payout share = `t4` (the only tier paid; returned as `expected_payout_share`); `expected_annual_payout_cents` = `expected_events_per_year` × expected payout share × `prob_premises_affected` × `cover_cents`; `premium_cents` = `expected_annual_payout_cents` / 12 × (1 + `risk_margin_rate`) + `expense_load_cents`. It computes in exact decimal arithmetic from the JSON values and rounds only the final premium, half up, to a whole cent. If any input is null, the quote returns `422` with code `pricing_not_computed`. If the county's `offered` is false, `POST /api/quotes` and `POST /api/policies` return `422` with code `county_not_offered` and the county's `not_offered_reason` as the message.
 
 `GET /api/counties` reads `data_coverage` from `data_quality.json` `county_coverage[fips].data_coverage`, or null if absent.
+
+`GET /api/demo` → `{ "policy_id": "pol_...", "member_name": "...", "fips": "48201", "cover_cents": 5000, "premium_cents": 133 }`, or `{ "policy_id": null }` when no demo policy exists (no `DEMO_VAULT_TOKEN`).
 
 ### Members and policies
 
@@ -308,9 +316,9 @@ Files in `artifacts/`, written by `ml/`, read by the backend, shown by the front
 | File | Contents |
 |---|---|
 | `trigger_params.json` | `theta_hi`, `theta_lo`, `gap_bridge_minutes` (120), `event_merge_hours` (72), `dropout_max_fraction` (0.1), and `grid`: every candidate pair with its expected wrong and missed payouts |
-| `pricing_table.json` | `model_version`; `counties`: an object keyed by FIPS, each value holding `expected_events_per_year`, `prob_24h_given_event`, `prob_premises_affected`, `credibility_weight`; `rates`: `risk_margin_rate`, `expense_load_cents`; `payout_schedule`: `{ "t4": 0.6, "t24": 1.0 }` |
+| `pricing_table.json` | `model_version`; `counties`: an object keyed by FIPS, each value holding `expected_events_per_year`, `prob_premises_affected`, `credibility_weight`, `offered` (boolean), `not_offered_reason` (one sentence, or null when offered); `rates`: `risk_margin_rate`, `expense_load_cents`; `payout_schedule`: `{ "t4": 0.6 }` (only the tiers the backend pays) |
 | `backtest.json` | `frequency`: per county and year, predicted and realised event counts, for the NB model and both baselines, plus deviance and calibration bins; `severity`: GPD parameters, fit statistic, QQ points; `credibility`: weight per county; `pool`: per test year, premiums, payouts, loss ratio, events |
-| `solvency.json` | `members`, `simulations`, `ruin_probability`, `capital_1_in_200_cents`, `stop_loss`: `attachment_cents`, `limit_cents`, `price_cents`; `annual_loss_quantiles` |
+| `solvency.json` | `members`, `simulations`, `capital_assumption`: `{ "initial_capital_cents": 0, "description": "one or two sentences: what capital the pool starts with and what counts as ruin" }`, `ruin_probability`, `capital_1_in_200_cents`, `stop_loss`: `attachment_cents`, `limit_cents`, `price_cents`; `annual_loss_quantiles` |
 | `basis_risk.json` | Per scheme (`index_only`, `rules_perfect_witness`, `rules_10pct_missing`, `rules_30pct_missing`): premises-events, `missed_rate`, `wrong_rate`, counts; `districts_used`; `fit_period`, `score_period`. Caveats (perfect witness, upper bound) go in `provenance.notes` |
 | `data_quality.json` | Per county-year: expected intervals, intervals present, coverage share, whether excluded from fitting |
 | `scenarios/{id}.json` | `id`, `title`, `description`, `fips`, `county_customers`, `start`, `end`, `series`: list of `{ "t": "...", "customers_out": 0, "share": 0.0 }` at 15-minute steps, `source` |
@@ -343,6 +351,7 @@ Grid values are expected payouts per member-year, in units of one full scheduled
   "provenance": {} }
 ```
 `rows` covers every TX, FL and IL county for each year 2014–2024. The D3 listing is every row with `intervals_over_county_customers` > 0.
+`findings` (added in 1.8) is a list of `{ "id": "harris-training-years", "finding": "plain sentences" }` recording data checks and their outcome.
 
 **`backtest.json`**
 ```json

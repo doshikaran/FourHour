@@ -8,24 +8,19 @@ import (
 func TestPublishFanOutAndSlowSubscriberDropped(t *testing.T) {
 	h := NewHub(2)
 	fast, slow := h.Subscribe(), h.Subscribe()
-	var wg sync.WaitGroup
+	// fast drains after every publish, so it never holds more than one
+	// message; this keeps the test independent of goroutine scheduling.
 	var got []Message
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for m := range fast.C {
-			got = append(got, m)
-			if len(got) == 5 {
-				return
-			}
-		}
-	}()
 	for i := 0; i < 5; i++ {
 		if err := h.Publish("tick", map[string]int{"i": i}); err != nil {
 			t.Fatal(err)
 		}
+		m, ok := <-fast.C
+		if !ok {
+			t.Fatalf("fast dropped at message %d", i)
+		}
+		got = append(got, m)
 	}
-	wg.Wait()
 	if len(got) != 5 || string(got[4].Data) != `{"i":4}` || got[0].Event != "tick" {
 		t.Fatalf("%+v", got)
 	}

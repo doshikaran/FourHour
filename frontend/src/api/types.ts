@@ -2,7 +2,7 @@
  * Types for every request, response, stream event and artifact in CONTRACTS.md,
  * sections 3, 4, 5, 6 and 8 (8.1 pins the artifact shapes). Field names match the contract exactly.
  *
- * Version: CONTRACTS.md 1.7.
+ * Version: CONTRACTS.md 1.8.
  *
  * Nullability follows section 3: a field that only gets a value later (PayPal IDs, end times,
  * cancelled_at, confirmed_at, confirmed_via, sim_time, reject_reason) is `| null`; every other
@@ -259,6 +259,10 @@ export interface County {
   state: string;
   /** Null until the data_quality.json row shape is pinned (CONTRACTS 1.4). */
   data_coverage: number | null;
+  /** False when the county has no price (1.8). Quotes and policies for it return 422 county_not_offered. */
+  offered: boolean;
+  /** One sentence, null when offered (1.8). */
+  not_offered_reason: string | null;
 }
 
 export interface CountiesResponse {
@@ -272,7 +276,8 @@ export interface QuoteRequest {
 
 export interface QuoteBreakdown {
   expected_events_per_year: number;
-  prob_24h_given_event: number;
+  /** The t4 schedule share, the only tier paid (1.8). */
+  expected_payout_share: number;
   prob_premises_affected: number;
   expected_annual_payout_cents: Cents;
   credibility_weight: number;
@@ -316,6 +321,11 @@ export interface PolicyDetailResponse {
   devices: WitnessDevice[];
   claims: Claim[];
 }
+
+/** GET /api/demo (1.8). policy_id null when no demo policy exists. */
+export type DemoResponse =
+  | { policy_id: PolicyId; member_name: string; fips: Fips; cover_cents: CoverCents; premium_cents: Cents }
+  | { policy_id: null };
 
 export interface PoliciesResponse {
   policies: Policy[];
@@ -490,9 +500,12 @@ export interface TriggerParamsArtifact {
 
 export interface PricingCounty {
   expected_events_per_year: N;
-  prob_24h_given_event: N;
   prob_premises_affected: N;
   credibility_weight: N;
+  /** 1.8: counties with no qualifying event in their credibility group are not offered. */
+  offered: boolean;
+  /** One sentence, null when offered. */
+  not_offered_reason: string | null;
 }
 
 export interface PricingTableArtifact {
@@ -503,9 +516,9 @@ export interface PricingTableArtifact {
     risk_margin_rate: N;
     expense_load_cents: Cents | null;
   };
+  /** Only the tiers the backend pays (1.8): t4 only. */
   payout_schedule: {
     t4: number;
-    t24: number;
   };
   provenance: Provenance;
 }
@@ -573,6 +586,11 @@ export interface BacktestArtifact {
 export interface SolvencyArtifact {
   members: number;
   simulations: number;
+  /** 1.8: what capital the pool starts with and what counts as ruin. */
+  capital_assumption: {
+    initial_capital_cents: Cents | null;
+    description: string;
+  };
   ruin_probability: N;
   capital_1_in_200_cents: Cents | null;
   stop_loss: {
@@ -626,6 +644,11 @@ export interface DataQualityRow {
   exclusion_reason: string | null;
 }
 
+export interface DataQualityFinding {
+  id: string;
+  finding: string;
+}
+
 export interface DataQualityArtifact {
   coverage_floor: N;
   rows: DataQualityRow[];
@@ -644,6 +667,8 @@ export interface DataQualityArtifact {
   }[];
   timestamp_check: { assumed: string; storm: string; first_sharp_rise_utc: IsoTime | null; consistent_with_utc: boolean | null; evidence: string };
   county_coverage: Record<Fips, { data_coverage: N }>;
+  /** 1.8: data checks and their outcome. Optional so an older artifact still renders. */
+  findings?: DataQualityFinding[];
   provenance: Provenance;
 }
 

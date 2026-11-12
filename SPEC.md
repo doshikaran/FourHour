@@ -56,13 +56,12 @@ Why R3 exists: a county index can stay low while one neighbourhood is dark. R3 i
 | Outage duration | Share | Basis |
 |---|---|---|
 | 4h or more | 60% | Refrigerated stock (USDA 4-hour guidance) |
-| 24h or more | 100% | Frozen stock as well (USDA freezer guidance; confirm the exact wording on the FSIS page before citing) |
 
-The 60/40 split is a product assumption. Say so in the UI.
+The 60% share is a product assumption. Say so in the UI. A 24-hour top-up to 100% (frozen stock) was designed and cut on 2026-11-12; it is neither paid nor priced.
 
 **Hours clause.** Qualifying runs in the same county that start within 72 hours of the previous run's end are one outage event. 72 hours is a product parameter, like the hours clause in a catastrophe cover, not a fitted value. It is written to `artifacts/trigger_params.json` as `event_merge_hours`.
 
-One payout per policy, per outage event, per tier. If an outage first qualifies at 4h and later passes 24h, the second payment is the difference, sent as a separate payout with its own key (see `CONTRACTS.md` section 7).
+One payout per policy, per outage event, per tier. Version 1 pays the 4-hour tier only.
 
 **What is covered in practice.** With these thresholds, cover in practice requires a registered witness device: index-only payment (R2) needs at least 90% of the county's customers out, which almost never happens. Outages affecting less than `theta_lo` (20%) of a county are not covered, even if the member's premises is dark; that is a limit of county-level data. Both are stated on the enrolment screen and in the README.
 
@@ -82,7 +81,9 @@ County customers come from the dataset's county customer file (`MCC.csv`), not a
 
 **5.4 Credibility.** Bühlmann–Straub: blend each county's own rate with its state's rate. Report the credibility weight per county.
 
-**5.5 Premium.** Monthly premium = (expected annual payout / 12) × (1 + risk margin) + expense load. Expected annual payout = expected qualifying events × expected payout share × probability the member's premises are affected given an index event. Qualifying events are runs of 4 hours or more at `theta_lo`, and the price is for a member with a registered witness (R1 and R3). R2 payments (no witness log) are not priced in version 1; their cost is reported in the backtest. Expected payout share = `t4` + (`t24` − `t4`) × P(24h | event). Version 1 estimates that last probability as the mean share of customers out during event windows. The risk margin comes from the tail of the simulated annual loss (5.7). State every component in the quote response so the UI can show the breakdown.
+**5.5 Premium.** Monthly premium = (expected annual payout / 12) × (1 + risk margin) + expense load. Expected annual payout = expected qualifying events × expected payout share × probability the member's premises are affected given an index event. Qualifying events are runs of 4 hours or more at `theta_lo`, and the price is for a member with a registered witness (R1 and R3). R2 payments (no witness log) are not priced in version 1; their cost is reported in the backtest. Expected payout share = `t4` (60%), the only tier paid; the price covers exactly the schedule paid. The probability the member's premises are affected is estimated as the mean share of customers out during event windows.
+
+**Not offered without history.** A county whose priced expected loss is zero because no qualifying event exists in its credibility group is not offered: it gets no quote and the enrolment screen shows it as unavailable with a one-sentence reason. Such counties stay in the evidence tables. The risk margin comes from the tail of the simulated annual loss (5.7). State every component in the quote response so the UI can show the breakdown.
 
 **5.6 Trigger design.** Choose `theta_hi` and `theta_lo` on the training years by grid search, trading expected wrong payouts against expected missed payouts. The pair chosen on 2014–2022 (decided by the humans on 2026-11-12, without reference to 2023–2024) is `theta_lo` 0.20 and `theta_hi` 0.90. 0.90 is the edge of the search grid, not a fitted optimum, and is reported that way in the artifact and the UI: `theta_hi` had no interior optimum: at county scale most index-only payments go to premises that had power, so the objective pushes R2 towards never paying. That is a finding, reported as such: index-only cover is mostly wrong, and the witness is what makes the product work. Write the chosen values and the full grid to `artifacts/trigger_params.json`.
 

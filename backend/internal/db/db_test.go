@@ -64,7 +64,7 @@ func TestMigrateIdempotent(t *testing.T) {
 	if err != nil || len(applied) != 0 {
 		t.Fatalf("second migrate: %v %v", applied, err)
 	}
-	want := []string{"claims", "ledger_entries", "members", "outage_events", "payouts", "policies", "premium_charges", "refunds", "schema_migrations", "webhook_events", "witness_devices", "witness_entries"}
+	want := []string{"claims", "demo_policy", "ledger_entries", "members", "outage_events", "payouts", "policies", "premium_charges", "refunds", "schema_migrations", "webhook_events", "witness_devices", "witness_entries"}
 	rows, err := d.Query(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
 	if err != nil {
 		t.Fatal(err)

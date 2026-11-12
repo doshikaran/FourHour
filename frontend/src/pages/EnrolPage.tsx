@@ -43,6 +43,9 @@ export function EnrolPage() {
   const trigger = useAsync(() => api.analytics('trigger'), 'analytics:trigger');
   const [fips, setFips] = useState('');
   const [cover, setCover] = useState<QuotableCoverCents>(15000);
+  const selected = counties.status === 'ok' ? counties.data.counties.find((c) => c.fips === fips) : undefined;
+  // 1.8: a county with offered=false gets no quote request and no enrolment.
+  const offeredFips = selected && selected.offered ? fips : '';
 
   return (
     <>
@@ -66,13 +69,19 @@ export function EnrolPage() {
         </div>
         <div className="card" style={{ minHeight: 300 }}>
           <h2>2. Your quote</h2>
-          {fips ? <QuotePanel fips={fips} cover={cover} trigger={trigger} /> : <p className="muted">Choose a county to see a quote.</p>}
+          {selected && !selected.offered ? (
+            <NotOfferedState reason={selected.not_offered_reason} />
+          ) : fips ? (
+            <QuotePanel fips={fips} cover={cover} trigger={trigger} />
+          ) : (
+            <p className="muted">Choose a county to see a quote.</p>
+          )}
         </div>
       </div>
       <div className="card" style={{ marginTop: 20 }}>
         <h2>3. Your details and PayPal</h2>
         <CoverageLimits trigger={trigger} />
-        <MemberForm fips={fips} cover={cover} />
+        <MemberForm fips={offeredFips} cover={cover} />
       </div>
     </>
   );
@@ -87,20 +96,49 @@ function CountyAndCover(props: {
 }) {
   const { counties, fips, setFips, cover, setCover } = props;
   if (counties.length === 0) return <p className="muted">The backend lists no counties yet.</p>;
+  const offered = counties.filter((c) => c.offered);
+  const notOffered = counties.filter((c) => !c.offered);
   return (
     <>
       <div className="field">
         <label htmlFor="county">County</label>
         <select id="county" value={fips} onChange={(e) => setFips(e.target.value)}>
           <option value="">Choose a county…</option>
-          {counties.map((c) => (
+          {offered.map((c) => (
             <option key={c.fips} value={c.fips}>
               {c.name}, {c.state} — outage data coverage {c.data_coverage === null ? 'not computed' : formatRate(c.data_coverage)}
             </option>
           ))}
+          {notOffered.length > 0 && (
+            <optgroup label="Not offered">
+              {notOffered.map((c) => (
+                <option key={c.fips} value={c.fips} disabled>
+                  {c.name}, {c.state} — not offered
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
         <span className="hint">Coverage is the share of 15-minute outage readings present in the county's data.</span>
       </div>
+      {notOffered.length > 0 && (
+        <details className="small" style={{ marginBottom: 12 }}>
+          <summary>
+            {notOffered.length} {notOffered.length === 1 ? 'county is' : 'counties are'} not offered — why
+          </summary>
+          <ul>
+            {notOffered.map((c) => (
+              <li key={c.fips}>
+                <strong>
+                  {c.name}, {c.state}
+                </strong>
+                : {c.not_offered_reason ?? 'No reason was given.'}
+              </li>
+            ))}
+          </ul>
+          <p className="muted">These counties still appear in the evidence tables.</p>
+        </details>
+      )}
       <fieldset className="choice-group">
         <legend>Cover amount (value of perishable stock)</legend>
         {COVER_OPTIONS_CENTS.map((c) => (
@@ -119,6 +157,9 @@ function QuotePanel({ fips, cover, trigger }: { fips: string; cover: QuotableCov
   const quote = useAsync(() => api.quote({ fips, cover_cents: cover }), `quote:${fips}:${cover}`);
   if (quote.status === 'loading') return <Loading what="your quote" />;
   if (quote.status === 'error') {
+    if (quote.error instanceof ApiError && quote.error.code === 'county_not_offered') {
+      return <NotOfferedState reason={quote.error.message} />;
+    }
     if (quote.error instanceof ApiError && quote.error.code === 'pricing_not_computed') {
       return (
         <div className="state" role="status">
@@ -134,6 +175,18 @@ function QuotePanel({ fips, cover, trigger }: { fips: string; cover: QuotableCov
   return <QuoteView q={quote.data} thetaLo={thetaText(trigger, 'theta_lo')} />;
 }
 
+function NotOfferedState({ reason }: { reason: string | null }) {
+  return (
+    <div className="state" role="status">
+      <p>
+        <strong>Not offered in this county</strong>
+      </p>
+      <p>{reason ?? 'No reason was given.'}</p>
+      <p className="muted">No quote is shown. Choose another county.</p>
+    </div>
+  );
+}
+
 function QuoteView({ q, thetaLo }: { q: QuoteResponse; thetaLo: string | null }) {
   const b = q.breakdown;
   const rows: [string, string, string][] = [
@@ -142,7 +195,7 @@ function QuoteView({ q, thetaLo }: { q: QuoteResponse; thetaLo: string | null })
       b.expected_events_per_year.toString(),
       'Frequency model, blended with the state rate',
     ],
-    ['Chance an outage reaches 24 hours', formatRate(b.prob_24h_given_event), 'Severity model'],
+    ['Share of cover paid per qualifying outage', formatRate(b.expected_payout_share), 'The 4-hour payout share, the only tier paid'],
     ['Chance your premises is affected', formatRate(b.prob_premises_affected), 'Mean share of customers out during events'],
     ['Expected payout per year', formatCents(b.expected_annual_payout_cents), 'Events × payout share × chance affected × cover'],
     ['County credibility weight', formatRate(b.credibility_weight), 'How much the county’s own history counts'],
@@ -205,15 +258,10 @@ function PayoutSchedule({ cover }: { cover: number }) {
               Outage of 4 hours or more: {formatRate(pricing.data.payout_schedule.t4)} of cover,{' '}
               <strong>{formatCents(scheduledCents(cover, pricing.data.payout_schedule.t4))}</strong> (refrigerated stock).
             </li>
-            <li>
-              Outage of 24 hours or more: {formatRate(pricing.data.payout_schedule.t24)} of cover in total, a top-up of{' '}
-              <strong>
-                {formatCents(scheduledCents(cover, pricing.data.payout_schedule.t24) - scheduledCents(cover, pricing.data.payout_schedule.t4))}
-              </strong>{' '}
-              (frozen stock as well).
-            </li>
           </ul>
-          <p className="small muted">The split between the two tiers is a product assumption, not a fitted value.</p>
+          <p className="small muted">
+            The 4-hour share of cover is a product assumption, not a fitted value. The price is built on this same share.
+          </p>
         </>
       )}
     </div>

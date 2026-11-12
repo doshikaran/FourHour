@@ -16,6 +16,7 @@ import type {
   ClaimId,
   ClaimsResponse,
   CountiesResponse,
+  DemoResponse,
   CreateMemberRequest,
   CreateMemberResponse,
   CreatePolicyRequest,
@@ -51,6 +52,8 @@ export interface FourHourApi {
   health(): Promise<HealthResponse>;
   counties(): Promise<CountiesResponse>;
   quote(req: QuoteRequest): Promise<QuoteResponse>;
+  /** GET /api/demo (1.8): the demo policy created at startup, or policy_id null. */
+  demo(): Promise<DemoResponse>;
 
   createMember(req: CreateMemberRequest): Promise<CreateMemberResponse>;
   createPolicy(req: CreatePolicyRequest): Promise<CreatePolicyResponse>;
@@ -196,6 +199,7 @@ export function createHttpApi(opts: HttpApiOptions): FourHourApi {
     health: () => get('/health'),
     counties: () => get('/counties'),
     quote: (req) => post('/quotes', req),
+    demo: () => get('/demo'),
     createMember: (req) => post('/members', req),
     createPolicy: (req) => post('/policies', req),
     policy: (id) => get(`/policies/${enc(id)}`),

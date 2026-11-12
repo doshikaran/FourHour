@@ -64,11 +64,12 @@ func TopUpCents(coverCents int64, t4Share, t24Share, factor *big.Rat) (int64, er
 type PremiumInputs struct {
 	CoverCents            int64
 	ExpectedEventsPerYear *big.Rat
-	Prob24hGivenEvent     *big.Rat
 	ProbPremisesAffected  *big.Rat
 	RiskMarginRate        *big.Rat
 	ExpenseLoadCents      *big.Rat
-	T4, T24               *big.Rat
+	// T4 is payout_schedule.t4, the only tier paid (CONTRACTS.md 1.8), so
+	// it is the expected payout share.
+	T4 *big.Rat
 }
 
 // Premium is the result of the CONTRACTS.md section 4 formula.
@@ -84,7 +85,7 @@ type Premium struct {
 // events × share × p_affected × cover; premium = expected / 12 × (1 + risk
 // margin) + expense load, rounded half up to a whole cent at the end only.
 func ComputePremium(in PremiumInputs) (Premium, error) {
-	for _, r := range []*big.Rat{in.ExpectedEventsPerYear, in.Prob24hGivenEvent, in.ProbPremisesAffected, in.RiskMarginRate, in.ExpenseLoadCents, in.T4, in.T24} {
+	for _, r := range []*big.Rat{in.ExpectedEventsPerYear, in.ProbPremisesAffected, in.RiskMarginRate, in.ExpenseLoadCents, in.T4} {
 		if r == nil {
 			return Premium{}, errors.New("money: premium input is nil")
 		}
@@ -95,9 +96,7 @@ func ComputePremium(in PremiumInputs) (Premium, error) {
 	if in.CoverCents <= 0 {
 		return Premium{}, ErrNegative
 	}
-	share := new(big.Rat).Sub(in.T24, in.T4)
-	share.Mul(share, in.Prob24hGivenEvent).Add(share, in.T4)
-	exp := new(big.Rat).Mul(in.ExpectedEventsPerYear, share)
+	exp := new(big.Rat).Mul(in.ExpectedEventsPerYear, in.T4)
 	exp.Mul(exp, in.ProbPremisesAffected).Mul(exp, new(big.Rat).SetInt64(in.CoverCents))
 	prem := new(big.Rat).Quo(exp, big.NewRat(12, 1))
 	prem.Mul(prem, new(big.Rat).Add(big.NewRat(1, 1), in.RiskMarginRate)).Add(prem, in.ExpenseLoadCents)

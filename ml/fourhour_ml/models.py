@@ -186,8 +186,9 @@ def fit_credibility(cm_train: pd.DataFrame) -> dict:
 # ------------------------------------------------------------------ pool simulation
 
 
-def payout_share(qualifies_t24: np.ndarray) -> np.ndarray:
-    return np.where(qualifies_t24, PAYOUT_SCHEDULE["t24"], PAYOUT_SCHEDULE["t4"])
+def payout_share(n_events: int) -> np.ndarray:
+    """Share of cover paid per qualifying event: the 4-hour tier only (CONTRACTS 1.8)."""
+    return np.full(n_events, PAYOUT_SCHEDULE["t4"])
 
 
 def simulate_year_payouts(rng: np.random.Generator, events: pd.DataFrame, covers: np.ndarray) -> tuple[int, int]:
@@ -195,19 +196,16 @@ def simulate_year_payouts(rng: np.random.Generator, events: pd.DataFrame, covers
 
     Every member has a witness (the priced case). For each event, each member is affected
     independently with probability equal to the event's mean share; an affected member is
-    paid t4 (and the t24 top-up if the event qualifies for 24 h), rounded down to a cent.
+    paid the 4-hour tier (t4 share of cover), rounded down to a cent. There is no 24-hour
+    top-up (cut in CONTRACTS 1.8).
     """
     total, claims = 0, 0
     if events.empty or covers.size == 0:
         return 0, 0
     ucov, ncov = np.unique(covers, return_counts=True)
-    for p, t24 in zip(events["mean_share"].to_numpy(float), events["qualifies_t24"].to_numpy(bool)):
+    t4_amt = (ucov * int(round(PAYOUT_SCHEDULE["t4"] * 100))) // 100
+    for p in events["mean_share"].to_numpy(float):
         hit = rng.binomial(ncov, min(max(p, 0.0), 1.0))
-        t4_amt = (ucov * int(PAYOUT_SCHEDULE["t4"] * 100)) // 100
         total += int((hit * t4_amt).sum())
         claims += int(hit.sum())
-        if t24:
-            top = (ucov * int(PAYOUT_SCHEDULE["t24"] * 100)) // 100 - t4_amt
-            total += int((hit * top).sum())
-            claims += int(hit.sum())
     return total, claims

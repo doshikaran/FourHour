@@ -62,15 +62,6 @@ const SCRIPTS: Record<string, ScriptItem[]> = {
       amount: 9000,
       reason: 'Fixture: scripted R1 at 4 hours; index and fixture witness agree (made-up, no rule engine ran).',
     },
-    {
-      step: 105,
-      kind: 'claim',
-      tier: 't24',
-      rule: 'R1',
-      decision: 'paid',
-      amount: 6000,
-      reason: 'Fixture: scripted 24-hour top-up, the difference between the 24-hour and 4-hour shares (made-up).',
-    },
     { step: 110, kind: 'witness', witness: 'power_restored', entryNo: 2 },
   ],
   'spoof-quiet': [

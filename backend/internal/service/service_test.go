@@ -200,10 +200,46 @@ func TestChargeNeedsActivePolicy(t *testing.T) {
 
 func writePricing(t *testing.T, dir string, counties string) {
 	t.Helper()
-	body := `{"model_version":"m-test","counties":{` + counties + `},"rates":{"risk_margin_rate":0.35,"expense_load_cents":150},"payout_schedule":{"t4":0.6,"t24":1.0},` +
+	body := `{"model_version":"m-test","counties":{` + counties + `},"rates":{"risk_margin_rate":0.35,"expense_load_cents":150},"payout_schedule":{"t4":0.6},` +
 		`"provenance":{"generated_at":"2026-11-11T00:00:00Z","git_commit":"x","code":"test","data_sources":[],"train_years":[2014,2022],"test_years":[2023,2024],"seed":1,"notes":"test input"}}`
 	if err := os.WriteFile(filepath.Join(dir, "pricing_table.json"), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// testCounties: Harris offered; Miami-Dade offered with a null input;
+// Cook not offered. Every other county is missing.
+const testCounties = `"48201":{"expected_events_per_year":0.61,"prob_premises_affected":0.22,"credibility_weight":0.74,"offered":true,"not_offered_reason":null},` +
+	`"12086":{"expected_events_per_year":null,"prob_premises_affected":0.1,"credibility_weight":0.1,"offered":true,"not_offered_reason":null},` +
+	`"17031":{"expected_events_per_year":0,"prob_premises_affected":0.1,"credibility_weight":0,"offered":false,"not_offered_reason":"No qualifying event in this county's credibility group."}`
+
+func TestCountyNotOfferedRefusesQuoteAndPolicy(t *testing.T) {
+	e := newEnv(t, config.Config{AppBaseURL: "https://api.example", FrontendURL: "https://app.example"})
+	ctx := context.Background()
+	writePricing(t, e.art, testCounties)
+	m, err := e.svc.CreateMember(ctx, "Ana", "ana@example.com", "ana.pp@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for fips, reason := range map[string]string{
+		"17031": "No qualifying event in this county's credibility group.",
+		"06037": "No price has been computed for this county.",
+	} {
+		se := svcErr(t, func() error { _, err := e.svc.Quote(ctx, fips, 5000); return err }())
+		if se.Status != 422 || se.Code != "county_not_offered" || se.Message != reason {
+			t.Errorf("quote %s: %+v", fips, se)
+		}
+		se = svcErr(t, func() error { _, err := e.svc.CreatePolicy(ctx, m.ID, fips, 5000); return err }())
+		if se.Status != 422 || se.Code != "county_not_offered" || se.Message != reason {
+			t.Errorf("policy %s: %+v", fips, se)
+		}
+	}
+	var n int
+	if err := e.db.QueryRow(`SELECT count(*) FROM policies`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("policies written for a county not offered: %d %v", n, err)
+	}
+	if len(e.fake.RequestsTo("POST", "/v3/vault/setup-tokens")) != 0 {
+		t.Fatal("PayPal called for a county not offered")
 	}
 }
 
@@ -213,12 +249,18 @@ func TestQuoteAndEnrolmentFlow(t *testing.T) {
 	if _, err := e.svc.Quote(ctx, "48201", 15000); svcErr(t, err).Code != "artifact_missing" {
 		t.Fatal(err)
 	}
-	writePricing(t, e.art, `"48201":{"expected_events_per_year":0.61,"prob_24h_given_event":0.18,"prob_premises_affected":0.22,"credibility_weight":0.74},"12086":{"expected_events_per_year":null,"prob_24h_given_event":0.1,"prob_premises_affected":0.1,"credibility_weight":0.1}`)
+	writePricing(t, e.art, testCounties)
+	// share = t4 = 0.6; expected = 0.61*0.6*0.22*15000 = 1207.8;
+	// premium = 1207.8/12*1.35 + 150 = 285.8775 -> 286.
 	q, err := e.svc.Quote(ctx, "48201", 15000)
-	if err != nil || q.PremiumCents != 302 || q.Breakdown.ExpectedAnnualPayoutCents != 1353 || q.ModelVersion != "m-test" {
+	if err != nil || q.PremiumCents != 286 || q.Breakdown.ExpectedAnnualPayoutCents != 1208 || q.ModelVersion != "m-test" || q.Breakdown.ExpectedPayoutShare != "0.6" {
 		t.Fatalf("%+v %v", q, err)
 	}
-	if _, err := e.svc.Quote(ctx, "12086", 15000); svcErr(t, err).Status != 422 {
+	qb, _ := json.Marshal(q)
+	if !strings.Contains(string(qb), `"expected_payout_share":0.6`) || strings.Contains(string(qb), "prob_24h") {
+		t.Fatalf("breakdown shape: %s", qb)
+	}
+	if _, err := e.svc.Quote(ctx, "12086", 15000); svcErr(t, err).Code != "pricing_not_computed" {
 		t.Fatal(err)
 	}
 	if _, err := e.svc.Quote(ctx, "48201", 100); svcErr(t, err).Code != "invalid_cover" {
@@ -232,7 +274,7 @@ func TestQuoteAndEnrolmentFlow(t *testing.T) {
 		t.Fatal("POST /api/policies must never accept 100")
 	}
 	cp, err := e.svc.CreatePolicy(ctx, m.ID, "48201", 15000)
-	if err != nil || cp.Policy.Status != model.PolicyPendingVault || !strings.Contains(cp.ApproveURL, "approve") || cp.Policy.PremiumCents != 302 {
+	if err != nil || cp.Policy.Status != model.PolicyPendingVault || !strings.Contains(cp.ApproveURL, "approve") || cp.Policy.PremiumCents != 286 {
 		t.Fatalf("%+v %v", cp, err)
 	}
 	st := e.fake.RequestsTo("POST", "/v3/vault/setup-tokens")
@@ -251,7 +293,7 @@ func TestQuoteAndEnrolmentFlow(t *testing.T) {
 		t.Fatal("payment token call")
 	}
 	det, err := e.svc.GetPolicyDetail(ctx, cp.Policy.ID)
-	if err != nil || det.Policy.Status != model.PolicyActive || len(det.PremiumCharges) != 1 || det.PremiumCharges[0].Status != model.ChargeCompleted || det.PremiumCharges[0].AmountCents != 302 {
+	if err != nil || det.Policy.Status != model.PolicyActive || len(det.PremiumCharges) != 1 || det.PremiumCharges[0].Status != model.ChargeCompleted || det.PremiumCharges[0].AmountCents != 286 {
 		t.Fatalf("%+v %v", det, err)
 	}
 	// Returning again is harmless: no new token exchange, no new charge.

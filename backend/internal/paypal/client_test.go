@@ -216,18 +216,21 @@ func TestTokenRefreshAfterExpiry(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	if _, _, err := c.GetPayoutBatch(ctx, "B"); err != nil {
+	// The fake (like PayPal) only knows batches that were created, so the
+	// first call creates one; it also fetches the first token.
+	b := createTestBatch(t, c)
+	if _, _, err := c.GetPayoutBatch(ctx, b); err != nil {
 		t.Fatal(err)
 	}
 	now = now.Add(31668*time.Second - 6*time.Minute) // still inside the margin
-	if _, _, err := c.GetPayoutBatch(ctx, "B"); err != nil {
+	if _, _, err := c.GetPayoutBatch(ctx, b); err != nil {
 		t.Fatal(err)
 	}
 	if n := len(f.RequestsTo("POST", "/v1/oauth2/token")); n != 1 {
 		t.Errorf("before margin: %d token calls", n)
 	}
 	now = now.Add(2 * time.Minute) // past expiry minus 5 minutes
-	if _, _, err := c.GetPayoutBatch(ctx, "B"); err != nil {
+	if _, _, err := c.GetPayoutBatch(ctx, b); err != nil {
 		t.Fatal(err)
 	}
 	if n := len(f.RequestsTo("POST", "/v1/oauth2/token")); n != 2 {
@@ -259,11 +262,33 @@ func TestPayoutDuplicateReturnsAPIError(t *testing.T) {
 func TestPayoutBatchParse(t *testing.T) {
 	f := paypaltest.New(t)
 	c := newTestClient(t, f, nil)
-	b, _, err := c.GetPayoutBatch(context.Background(), "5UXD2E8A7EBQJ")
+	id := createTestBatch(t, c)
+	f.Lock()
+	f.BatchStatuses = []string{"PENDING"}
+	f.ItemStatuses = []string{"SUCCESS"}
+	f.Unlock()
+	b, _, err := c.GetPayoutBatch(context.Background(), id)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if b.BatchHeader.BatchStatus != "PENDING" || len(b.Items) != 1 || b.Items[0].TransactionStatus != "SUCCESS" || b.Items[0].PayoutItem.Amount.Value != "1.00" || b.BatchHeader.Amount.Currency != "USD" {
 		t.Errorf("parsed: %+v", b)
 	}
+}
+
+// createTestBatch creates a 100-cent payout batch on the fake and returns its
+// payout_batch_id. The fake returns 404 INVALID_RESOURCE_ID for unknown IDs,
+// as PayPal does.
+func createTestBatch(t *testing.T, c *paypal.Client) string {
+	t.Helper()
+	pa, err := paypal.PayoutUSD(100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := paypal.CreatePayoutRequest{SenderBatchHeader: paypal.SenderBatchHeader{SenderBatchID: "sb-test"}, Items: []paypal.PayoutItemRequest{{RecipientType: "EMAIL", Amount: pa, Receiver: "r@example.com", RecipientWallet: "PAYPAL"}}}
+	out, _, err := c.CreatePayout(context.Background(), req)
+	if err != nil || out.BatchHeader.PayoutBatchID == "" {
+		t.Fatalf("create payout: %+v %v", out, err)
+	}
+	return out.BatchHeader.PayoutBatchID
 }

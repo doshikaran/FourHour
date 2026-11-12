@@ -195,7 +195,7 @@ func TestHoursClauseDoesNotMergeAfterWindow(t *testing.T) {
 
 // --- Evaluate -------------------------------------------------------------
 
-var sched = Schedule{T4: big.NewRat(6, 10), T24: big.NewRat(1, 1)}
+var sched = Schedule{T4: big.NewRat(6, 10)}
 
 func runAt(i, j int, open bool) Run {
 	r := Run{Start: at(i), Last: at(j)}
@@ -419,5 +419,26 @@ func TestDropoutFractionZeroIsOff(t *testing.T) {
 	d.Observe(at(1), f(0))
 	if ev, _ := d.Event("e"); ev.LoEnd() == nil {
 		t.Fatal("with fraction 0 a zero reading ends the run")
+	}
+}
+
+// TestNo24HourTopUp: the 24-hour top-up is cut (TASKS.md). An outage that
+// runs past 24 hours, confirmed by the witness for all of it, still yields
+// exactly one t4 decision and no t24 decision, now and on later evaluations.
+func TestNo24HourTopUp(t *testing.T) {
+	long := Event{ID: "evt_long", LoRuns: []Run{runAt(0, 130, false)}, HiRuns: []Run{runAt(1, 125, false)}} // ~31 h
+	pol := Policy{ID: "p", CoverCents: 15000, HasDevice: true, Entries: []WitnessEntry{lost("w1", 1, 1), restored("w2", 2, 128)}}
+	decided := map[Key]bool{}
+	for _, now := range []time.Time{at(20), at(100), at(131), at(400)} {
+		ds := eval(t, Input{Now: now, ReplayEnded: now.Equal(at(400)), Events: []Event{long}, Policy: pol, Decided: func(k Key) bool { return decided[k] }})
+		for _, d := range ds {
+			if d.Tier != TierT4 {
+				t.Fatalf("non-t4 decision at %s: %+v", now, d)
+			}
+			decided[d.Key()] = true
+		}
+	}
+	if len(decided) != 1 || !decided[Key{EventID: "evt_long", Tier: TierT4}] {
+		t.Fatalf("decisions: %+v", decided)
 	}
 }

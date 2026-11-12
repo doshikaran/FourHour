@@ -45,13 +45,41 @@ func TestTriggerParamsRealAndFallback(t *testing.T) {
 func TestScheduleFromArtifactOrSpec(t *testing.T) {
 	dir := t.TempDir()
 	s, src := LoadSchedule(dir)
-	if src.FromArtifact || s.T4.FloatString(2) != "0.60" || s.T24.FloatString(2) != "1.00" {
-		t.Fatalf("spec schedule: %v %v %+v", s.T4, s.T24, src)
+	if src.FromArtifact || s.T4.FloatString(2) != "0.60" {
+		t.Fatalf("spec schedule: %v %+v", s.T4, src)
 	}
-	write(t, dir, "pricing_table.json", `{"model_version":"m","counties":{},"rates":null,"payout_schedule":{"t4":0.6,"t24":1.0},`+provJSON+`}`)
+	write(t, dir, "pricing_table.json", `{"model_version":"m","counties":{},"rates":null,"payout_schedule":{"t4":0.55},`+provJSON+`}`)
 	s, src = LoadSchedule(dir)
-	if !src.FromArtifact || s.T4.FloatString(1) != "0.6" {
+	if !src.FromArtifact || s.T4.FloatString(2) != "0.55" {
 		t.Fatalf("artifact schedule: %+v", src)
+	}
+	// A t24 key is a schedule the backend does not pay: refused, SPEC.md used.
+	write(t, dir, "pricing_table.json", `{"model_version":"m","counties":{},"rates":null,"payout_schedule":{"t4":0.55,"t24":1.0},`+provJSON+`}`)
+	if s, src = LoadSchedule(dir); src.FromArtifact || !strings.Contains(src.Reason, "t24") || s.T4.FloatString(2) != "0.60" {
+		t.Fatalf("t24 schedule: %v %+v", s.T4, src)
+	}
+}
+
+func TestOfferFor(t *testing.T) {
+	dir := t.TempDir()
+	if o := CountyOffers(dir, []string{"48201"}); o["48201"].Offered || o["48201"].Reason == nil || *o["48201"].Reason != NoPriceReason {
+		t.Fatalf("no file: %+v", o)
+	}
+	write(t, dir, "pricing_table.json", `{"model_version":"m","rates":null,"payout_schedule":{"t4":0.6},"counties":{`+
+		`"48201":{"expected_events_per_year":0.25,"prob_premises_affected":0.4,"credibility_weight":0.1,"offered":true,"not_offered_reason":null},`+
+		`"17031":{"expected_events_per_year":0,"prob_premises_affected":0.4,"credibility_weight":0.1,"offered":false,"not_offered_reason":"No qualifying event in this county's credibility group."},`+
+		`"12086":{"expected_events_per_year":null,"prob_premises_affected":null,"credibility_weight":null,"offered":null,"not_offered_reason":null}},`+provJSON+`}`)
+	o := CountyOffers(dir, []string{"48201", "17031", "12086", "06037"})
+	if !o["48201"].Offered || o["48201"].Reason != nil {
+		t.Errorf("48201: %+v", o["48201"])
+	}
+	if o["17031"].Offered || *o["17031"].Reason != "No qualifying event in this county's credibility group." {
+		t.Errorf("17031: %+v", o["17031"])
+	}
+	for _, f := range []string{"12086", "06037"} {
+		if o[f].Offered || *o[f].Reason != NoPriceReason {
+			t.Errorf("%s: %+v", f, o[f])
+		}
 	}
 }
 

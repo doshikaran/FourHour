@@ -353,7 +353,7 @@ export function thetaHiWording(status: ThetaHiStatus | null | undefined): { shor
 
 export const TIER_LABEL: Record<'t4' | 't24', string> = {
   t4: '4-hour tier',
-  t24: '24-hour top-up',
+  t24: '24-hour tier (not offered)',
 };
 
 /** Rule meanings, from SPEC section 4. Text only; no numbers. */

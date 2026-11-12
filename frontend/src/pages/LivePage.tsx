@@ -11,6 +11,7 @@ import { IndexChart, SeriesTable, type ChartMarker } from '../components/IndexCh
 import { PageHeader } from '../components/Layout';
 import { Empty, ErrorState, FixtureChip, Loading, NotComputed, ProvenanceDetails, RealDataChip, thetaHiWording } from '../components/ui';
 import { CONFIRMED_HOLD_MS, focusClaim, initialLiveState, liveReducer, type FeedItem } from '../live/liveState';
+import { DERECHO_SCENARIO_ID, DemoGuide } from '../live/DemoGuide';
 import { ClaimRow, PayoutStage } from '../live/PayoutStage';
 import { RunClock } from '../live/RunClocks';
 import { formatClockUtc, formatCountyLocal, formatUtc } from '../lib/format';
@@ -89,7 +90,7 @@ export function LivePage() {
         t: c.claim.sim_time,
         kind: 'claim',
         tone: c.claim.decision === 'paid' ? 'good' : c.claim.decision === 'review' ? 'warn' : 'neutral',
-        label: `${c.claim.tier === 't4' ? '4 h' : '24 h'} ${c.claim.rule} ${c.claim.decision}`,
+        label: `${c.claim.tier === 't4' ? '4 h' : c.claim.tier} ${c.claim.rule} ${c.claim.decision}`,
       });
     }
     return m;
@@ -118,12 +119,27 @@ export function LivePage() {
   const fips = running?.fips ?? state.series[0]?.fips ?? null;
   const focus = focusClaim(state, now);
   const local = formatCountyLocal(state.simTime, fips);
+  const derecho = scenarioList.find((s) => s.id === DERECHO_SCENARIO_ID) ?? null;
+  const peakShare = useMemo(() => {
+    let m: number | null = null;
+    for (const t of state.series) if (t.share !== null && (m === null || t.share > m)) m = t.share;
+    return m;
+  }, [state.series]);
 
   return (
     <>
       <PageHeader title="Live replay">
         <StreamPill status={status} />
       </PageHeader>
+
+      <DemoGuide
+        thetaLo={thetaLo}
+        thetaHi={thetaHi}
+        derechoTitle={derecho ? derecho.title : null}
+        peakShare={peakShare}
+        derechoRunning={state.scenarioId === DERECHO_SCENARIO_ID}
+        replayEnded={state.ended}
+      />
 
       <div className="card control-card" style={{ marginBottom: 16 }}>
         {scenarios.status === 'loading' && <Loading what="scenarios" />}

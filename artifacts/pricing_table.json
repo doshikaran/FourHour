@@ -1,36 +1,38 @@
 {
-  "model_version": "2026-11-12-5a552e3-dirty",
+  "model_version": "2026-11-12-e9fbacd-dirty",
   "counties": {
     "48201": {
       "expected_events_per_year": 0.25,
-      "prob_24h_given_event": 0.814744,
       "prob_premises_affected": 0.396554,
-      "credibility_weight": 0.0
+      "credibility_weight": 0.0,
+      "offered": true,
+      "not_offered_reason": null
     },
     "12086": {
       "expected_events_per_year": 0.25,
-      "prob_24h_given_event": 0.814744,
       "prob_premises_affected": 0.396554,
-      "credibility_weight": 0.0
+      "credibility_weight": 0.0,
+      "offered": true,
+      "not_offered_reason": null
     },
     "17031": {
       "expected_events_per_year": 0.0,
-      "prob_24h_given_event": 0.814744,
       "prob_premises_affected": 0.396554,
-      "credibility_weight": 0.0
+      "credibility_weight": 0.0,
+      "offered": false,
+      "not_offered_reason": "No outage reached 20% of customers for 4 hours in its pricing group (IL counties with usable data: Cook) in the 2014-2022 data, so there is no history to set a price from."
     }
   },
   "rates": {
-    "risk_margin_rate": 0.479385,
+    "risk_margin_rate": 0.470976,
     "expense_load_cents": 100
   },
   "payout_schedule": {
-    "t4": 0.6,
-    "t24": 1.0
+    "t4": 0.6
   },
   "provenance": {
-    "generated_at": "2026-11-12T00:09:46Z",
-    "git_commit": "5a552e3-dirty",
+    "generated_at": "2026-11-12T07:24:08Z",
+    "git_commit": "e9fbacd-dirty",
     "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_pricing_table",
     "data_sources": [
       {
@@ -103,6 +105,6 @@
       2024
     ],
     "seed": 20261111,
-    "notes": "Model inputs fitted on training years only (2014-2022, 144 fitted county-years in the 22-county model universe). Events are theta_lo = 0.2 qualifying events (runs of 4 h or more after gap bridging, dropouts and the 72 h hours clause), CONTRACTS 1.7. expected_events_per_year = 12 x the B\u00fchlmann-Straub blended monthly rate (county rate blended with its state rate; the between-county variance estimate a is not positive, so k is undefined (null) and every county's credibility weight is 0: each county gets its state's rate). Training theta_lo events per demo county: Harris County, TX: 0, Miami-Dade County, FL: 1, Cook County, IL: 0. prob_24h_given_event: generalised Pareto fitted to the excess of the longest run over 4 h, pooled over all 34 training events (empirical share 0.8235); the same for every county. prob_premises_affected: SPEC 5.5 version 1, the mean share of customers out during training event windows, pooled over all training events (34); the same for every county. risk_margin_rate = cost of capital 0.06 x (1-in-200 simulated annual pool loss - mean loss) / mean loss = 0.06 x (3195000 - 355404) / 355404 (solvency.json). expense_load_cents 100 per member per month. Product parameters set by the humans on 2026-11-12: expense_load_cents 100, cost of capital 0.06, payout_schedule t4 0.6 / t24 1.0 (the 60/40 split is a product assumption). Premiums this table gives under the CONTRACTS section 4 formula (cents per month, cover 5000/15000/30000): Harris County, TX: 157, 270, 439; Miami-Dade County, FL: 157, 270, 439; Cook County, IL: 100, 100, 100. Priced case: a member with a registered witness. R2 (no witness, 50% on theta_hi events) is not priced in version 1; its cost is reported in backtest.json."
+    "notes": "Model inputs fitted on training years only (2014-2022, 144 fitted county-years in the 22-county model universe). Events are theta_lo = 0.2 qualifying events (runs of 4 h or more after gap bridging, dropouts and the 72 h hours clause), CONTRACTS 1.7. expected_events_per_year = 12 x the B\u00fchlmann-Straub blended monthly rate (county rate blended with its state rate; the between-county variance estimate a is not positive, so k is undefined (null) and every county's credibility weight is 0: each county gets its state's rate). Training theta_lo events per demo county: Harris County, TX: 0, Miami-Dade County, FL: 1, Cook County, IL: 0. Expected payout share = t4 0.6, the only tier paid (CONTRACTS 1.8: the 24-hour tier was cut on 2026-11-12 and is neither paid nor priced). P(24 h | event) stays in backtest.json severity as a report (fitted 0.8147, 34 training events). prob_premises_affected: SPEC 5.5 version 1, the mean share of customers out during training event windows, pooled over all training events (34); the same for every county. risk_margin_rate = cost of capital 0.06 x (1-in-200 simulated annual pool loss - mean loss) / mean loss = 0.06 x (2823000 - 318997) / 318997 (solvency.json). expense_load_cents 100 per member per month. Product parameters set by the humans on 2026-11-12: expense_load_cents 100, cost of capital 0.06, payout_schedule t4 0.6 (60% of cover is a product assumption). Offered (SPEC 5.5, CONTRACTS 1.8): a county is not offered when its priced expected loss is zero because no theta_lo qualifying event exists in its credibility group (its state's model-universe counties) in the fitted training years. Harris County, TX: offered; Miami-Dade County, FL: offered; Cook County, IL: not offered. No outage reached 20% of customers for 4 hours in its pricing group (IL counties with usable data: Cook) in the 2014-2022 data, so there is no history to set a price from. Not-offered counties have no premium and stay in backtest.json and data_quality.json. Premiums this table gives under the CONTRACTS section 4 formula (cents per month, cover 5000/15000/30000): Harris County, TX: 136, 209, 319; Miami-Dade County, FL: 136, 209, 319. Priced case: a member with a registered witness. R2 (no witness, 50% on theta_hi events) is not priced in version 1; its cost is reported in backtest.json."
   }
 }
