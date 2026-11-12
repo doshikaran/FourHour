@@ -24,7 +24,7 @@ Resume from this file and `TASKS.md` alone.
 | B5 audit | running | independent reviewer |
 | B6 licences | done | `ml/README.md`: figshare API + DataCite agree CC BY 4.0; Dataverse API + DataCite agree CC0 1.0; landing pages bot-blocked (202, empty). README attribution now names the creators and links the licence |
 | B7 screens | blocked on B2 | |
-| B8 submission pack | pending | |
+| B8 submission pack | drafted | `docs/VIDEO_SCRIPT.md` (~390 words), `docs/DEVPOST.md`, `docs/SUBMISSION_CHECKLIST.md`. Demo URL and video URL placeholders until deploy/upload; numbers to re-check against AUDIT.md |
 
 
 ## Sandbox money calls: 4 runs of 5, plus 1 startup demo premium charge (136 cents) in item 6
