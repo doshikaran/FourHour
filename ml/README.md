@@ -116,20 +116,48 @@ Headers were read from each file: 2024 in full, and the other years from their f
 
 Voltage values range from 0 to 350 in the 2014 file's metadata. Which value means "no supply" must be checked in `About the initiative.pdf`.
 
-## Licence and terms text (recorded, not interpreted; S6 is for the humans)
+## Licence and terms text (B6, checked 2026-11-12)
 
-Neither download page could be read by automated fetch on 2026-11-11. The figshare page
-returned HTTP 403. The Dataverse page returned an empty bot-check response (HTTP 202,
-0 bytes). The text below comes from each record's official API, not from the page.
-**A human must read both pages for S6.**
+Each licence was read from two independent official sources: the hosting repository's API and the
+DataCite DOI registry record (`rightsList`). The HTML landing pages could not be fetched by script:
+figshare and Dataverse both return HTTP 202 with an empty body (a bot check), so a human should open
+them once in a browser: https://doi.org/10.6084/m9.figshare.24237376.v4 and
+https://doi.org/10.7910/DVN/CLLZZM.
 
-* **EAGLE-I**, from https://api.figshare.com/v2/articles/24237376, field `license`:
+### EAGLE-I: CC BY 4.0
+
+* figshare API, https://api.figshare.com/v2/articles/24237376/versions/4 (and the unversioned
+  record, latest version 4), field `license`:
   `{"value": 1, "name": "CC BY 4.0", "url": "https://creativecommons.org/licenses/by/4.0/"}`.
-  Citation field: "Brelsford, Christa; Tennille, Sarah; Myers, Aaron; Chinthavali, Supriya; Tansakul, Varisara; Denman, Matthew; et al. (2023). The Environment for Analysis of Geo-Located Energy Information’s Recorded Electricity Outages 2014-2025. figshare. Dataset. https://doi.org/10.6084/m9.figshare.24237376.v4"
-  Description (verbatim, HTML tags removed): "The core of the provided dataset includes eight years of power outage information at the county level from 2014 to 2025 at 15-minute intervals collected from utility’s public outage maps on their websites by the EAGLE-I program at ORNL. Three supplementary files are included to augment the power outage data files. The first file includes the customer coverage rate of each state from 2018-2022. The second file provides the modeled number of electric customers per county as of 2022. The third presents our Data Quality Index and the four sub-components by year by FEMA Region for 2018-2022. UPDATE 2/16/2023: Added 2023 outage data and Uri_Map.R and DQI_processing.R files have been added. They were used to create graphics in associated works. UPDATE 4/10/2025: Added 2024 outage data. UPDATE 2/24/2026: Added 2025 outage data."
-* **ESMI**, from https://dataverse.harvard.edu/api/datasets/:persistentId/?persistentId=doi:10.7910/DVN/CLLZZM, `latestVersion`:
-  `license`: `{"name": "CC0 1.0", "uri": "http://creativecommons.org/publicdomain/zero/1.0", "rightsIdentifier": "CC0-1.0"}`. `termsOfUse`: null. `termsOfAccess`: null. `fileAccessRequest`: false. `guestbookId`: 251.
-  The guestbook's questions and any text it shows were not seen.
+* DataCite, https://api.datacite.org/dois/10.6084/m9.figshare.24237376.v4 (same for the
+  unversioned DOI), `rightsList`: `"rights": "Creative Commons Attribution 4.0 International"`,
+  `"rightsUri": "https://creativecommons.org/licenses/by/4.0/legalcode"`, `"rightsIdentifier": "cc-by-4.0"`.
+* Dataset documentation: the data descriptor (Brelsford et al., Scientific Data 2024,
+  https://www.nature.com/articles/s41597-024-03095-5) says "Data are available in the Figshare
+  repository at https://doi.org/10.6084/m9.figshare.24237376" and states no other terms for the data.
+  The article itself is CC BY 4.0.
+* Citation field (figshare): "Brelsford, Christa; Tennille, Sarah; Myers, Aaron; Chinthavali, Supriya;
+  Tansakul, Varisara; Denman, Matthew; et al. (2023). The Environment for Analysis of Geo-Located Energy
+  Information’s Recorded Electricity Outages 2014-2025. figshare. Dataset.
+  https://doi.org/10.6084/m9.figshare.24237376.v4"
+* What CC BY 4.0 section 3(a) requires when sharing derived material: name the creators, keep any
+  notices, link the licence, link the source, and say that changes were made. The root `README.md`
+  attribution does all five.
+
+### ESMI: CC0 1.0
+
+* Harvard Dataverse API,
+  https://dataverse.harvard.edu/api/datasets/:persistentId/?persistentId=doi:10.7910/DVN/CLLZZM,
+  `latestVersion` (version 2.0): `license`: `{"name": "CC0 1.0", "uri":
+  "http://creativecommons.org/publicdomain/zero/1.0", "rightsIdentifier": "CC0-1.0"}`.
+  `termsOfUse`: null. `termsOfAccess`: null. `fileAccessRequest`: false.
+* DataCite, https://api.datacite.org/dois/10.7910/DVN/CLLZZM, `rightsList`:
+  `info:eu-repo/semantics/openAccess` and `"rights": "Creative Commons Zero v1.0 Universal"`,
+  `"rightsUri": "https://creativecommons.org/publicdomain/zero/1.0/legalcode"`.
+* Author and contact: "Prayas, Energy Group", esmi@prayaspune.org. CC0 requires no attribution;
+  the root README cites the dataset anyway.
+* Downloads pass through Dataverse guestbook 251. Its questions were answered by the humans when
+  downloading; its text was not captured here.
 
 ## Code map
 

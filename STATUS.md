@@ -1,6 +1,6 @@
 # FourHour build status
 
-Updated: 2026-11-12 12:50 IST by the lead. Final development pass in progress (humans' items 1–6); freeze 15:30 IST. Submission: 01:30 IST 13 Nov.
+Updated: 2026-11-12 19:20 IST by the lead (ship run). Earlier: Final development pass in progress (humans' items 1–6); freeze 15:30 IST. Submission: 01:30 IST 13 Nov.
 
 ## Final pass (items 1–6): DONE 13:20 IST
 
@@ -11,6 +11,21 @@ Updated: 2026-11-12 12:50 IST by the lead. Final development pass in progress (h
 - Commits `0938669`, `e564b91` (+ final) are LOCAL: humans must `git push origin main`.
 
 Resume from this file and `TASKS.md` alone.
+
+## Ship run (started 19:05 IST, Mac)
+
+| Item | State | Evidence |
+|---|---|---|
+| Track A restyle | running | worktree `../fourhour-ui-restyle`, branch `ui-restyle`, not merged |
+| B1 repo check | **fail** | `GET api.github.com/repos/doshikaran/FourHour` without auth returns 404: repo is private, so the licence can't be detected publicly. README has all 9 SPEC 10 sections in order; `LICENSE` is MIT |
+| B2 deploy | **blocked** | `RENDER_API_KEY` is not in `.env` |
+| B3 webhook | blocked on B2 | |
+| B4 hosted run | blocked on B2 | |
+| B5 audit | running | independent reviewer |
+| B6 licences | done | `ml/README.md`: figshare API + DataCite agree CC BY 4.0; Dataverse API + DataCite agree CC0 1.0; landing pages bot-blocked (202, empty). README attribution now names the creators and links the licence |
+| B7 screens | blocked on B2 | |
+| B8 submission pack | pending | |
+
 
 ## Sandbox money calls: 4 runs of 5, plus 1 startup demo premium charge (136 cents) in item 6
 
