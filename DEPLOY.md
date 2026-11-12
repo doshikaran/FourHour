@@ -1,5 +1,7 @@
 # Deploying FourHour on Render
 
+Live: https://fourhour-web.onrender.com and https://fourhour-api.onrender.com (webhook `37L051887T137272E` registered through the Webhooks API). Service config, env vars and the webhook can also be set with the Render and PayPal APIs; the lead did so on 2026-11-12.
+
 Sandbox only. The backend refuses to start unless `PAYPAL_BASE_URL` is `https://api-m.sandbox.paypal.com`.
 
 `render.yaml` at the repo root defines two services:

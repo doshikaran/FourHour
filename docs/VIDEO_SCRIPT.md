@@ -2,7 +2,7 @@
 
 Three parts of about one minute each, about 400 spoken words. Every number comes from `artifacts/` (file named in the caption notes). Record at 1920x1080. Members and loss amounts are simulated; outage data and model results are real. Keep the "simulated" and "real data" labels in shot.
 
-Before recording: open `<API URL>/api/health` to wake the free host. Don't redeploy between enrolment and the replay. Check the sandbox business balance.
+Before recording: open https://fourhour-api.onrender.com/api/health to wake the free host. Don't redeploy between enrolment and the replay. Check the sandbox business balance.
 
 ## Part 1 (0:00–1:00): the problem, enrolment, the first premium
 
@@ -33,7 +33,7 @@ Before recording: open `<API URL>/api/health` to wake the free host. Don't redep
 | 13 | "The hard question is basis risk: a county number doesn't prove your fridge was off. The county can be dark while your street has power, or the other way round." | `/evidence`, basis-risk table with caveats beside it | Basis risk (`basis_risk.json`) |
 | 14 | "We tested it on real premises-level supply data from India. Paying on the index alone missed seventy percent of real four-hour outages, and thirty-five percent of its payments went to premises that had power." | Highlight the index-only row | Index only: 70.4% missed, 35.3% wrong |
 | 15 | "Adding the witness cut misses to six percent with no wrong payments, and to twenty-three and a half percent with thirty percent of witness logs missing." | Highlight the rules rows | With witness: 5.9% / 0.0%; 30% logs missing: 23.5% / 6.0% |
-| 16 | "That's an upper bound: Indian data, eight districts, and a perfect witness." | Caveats panel | Upper bound: India, 8 districts |
+| 16 | "That's an upper bound: Indian data, eight districts with one dominating, and a perfect witness. An independent audit reproduced every number." | Caveats panel | Upper bound: India, 8 districts · audit in AUDIT.md |
 | 17 | "We're honest about the rest. Our frequency model did not beat its baselines; events are too rare. In 2024 the backtest pool lost money, a loss ratio of 1.32, from two years of test data." | Backtest panel | Frequency: no gain over baselines; 2024 loss ratio 1.32 (`backtest.json`) |
 | 18 | "FourHour is the pricing, trigger and claims engine a licensed carrier would run: a sandbox prototype, not an insurance offer." | Limitations section, then repo URL | github.com/doshikaran/FourHour · MIT |
 

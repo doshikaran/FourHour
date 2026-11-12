@@ -345,7 +345,7 @@ export function thetaHiWording(status: ThetaHiStatus | null | undefined): { shor
   if (status === 'grid_edge_no_interior_optimum') {
     return {
       short: 'grid edge',
-      long: 'The strong threshold is the edge of the search grid: the search found no interior optimum for it. Index-only payment at county scale mostly pays premises that had power, so the search pushed it as high as the grid allowed.',
+      long: 'The strong threshold is the edge of the search grid: the search found no interior optimum for it, and the objective is nearly flat near the edge. Read it as "index-only payment only in extreme events", not as a fitted value.',
     };
   }
   return { short: '', long: 'The strong threshold was chosen by the trigger-design search on 2014–2022 data.' };

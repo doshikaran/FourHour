@@ -127,8 +127,8 @@ Each spike is one small program with its own README line saying how to run it an
 
 - [x] **H1 `[LEAD]`:** README per `SPEC.md` section 10, with every number read from `artifacts/`.
   Evidence (2026-11-12): README written from artifacts at provenance e9fbacd, all nine SPEC section 10 sections in order. Pending M7: humans must sign off the numbers before submission.
-- [ ] **H2 `[LEAD]`:** deploy backend and frontend on Render; register the webhook to the deployed URL.
-  Prepared (2026-11-12): `render.yaml` and `DEPLOY.md` written, not run. Account steps are for the humans.
+- [x] **H2 `[LEAD]`:** deploy backend and frontend on Render; register the webhook to the deployed URL.
+  Evidence (2026-11-12): services from the Blueprint; URLs and `PAYPAL_WEBHOOK_ID` set by API; `/api/health` sandbox + 6 artifacts; webhook `37L051887T137272E` delivered and verified (SUCCESS) PAYMENT.CAPTURE.COMPLETED and PAYOUTS-ITEM.SUCCEEDED/PAYOUTSBATCH.SUCCESS. Hosted run: claim `clm_a6fmawitie6z` R3, batch `QY3SCENACWZFG` item `VVXDUZFCRZ62W` confirmed by poll (webhook ~30 s later); spoof `clm_qa2wve6kuc7h` R5, no payout.
 - [ ] **H3 `[HUMAN]`:** clean-clone test: follow the README on a fresh machine.
 - [ ] **H4 `[HUMAN]`:** run the three scenarios end to end on the deployed app, three times.
 - [ ] **H5 `[HUMAN]`:** record and upload the video; submit on Devpost.
@@ -139,7 +139,7 @@ Follow the cut order in `SPEC.md` section 9. Record each cut here with the reaso
 
 Cuts made 2026-11-12 by the humans (deadline 01:30 IST 13 Nov; build frozen about 15:30 IST):
 
-- [CUT 2026-11-12] The 24-hour top-up payout (B5 second tier). Not tested end to end. The rule engine pays the 4-hour tier only. The premium still includes the t24 term from `pricing_table.json`; the README states this as a limitation.
+- [CUT 2026-11-12] The 24-hour top-up payout (B5 second tier). Not tested end to end. The rule engine pays the 4-hour tier only. Since `0938669` the premium is priced on the 4-hour tier only, matching what is paid.
 - [CUT 2026-11-12] Cancel with pro-rata refund (B7 stretch). Backend code may remain; no UI or README mentions it.
 - [CUT 2026-11-12] Offline queueing on the witness page (F5 stretch). Live logging and upload stay.
 - [CUT 2026-11-12] `docker-compose.yml` (K5). The README gives native run steps.

@@ -2,7 +2,7 @@
 
 Paste each section into the matching Devpost field. Numbers come from `artifacts/` (provenance in each file).
 
-- **Demo URL:** `<frontend URL, filled in after deploy>`
+- **Demo URL:** https://fourhour-web.onrender.com
 - **Repo:** https://github.com/doshikaran/FourHour (MIT)
 - **Video:** `<YouTube URL>`
 
@@ -42,9 +42,9 @@ FourHour is the pricing, trigger and claims engine a licensed carrier would run;
 
 The "AI" is a set of statistical and actuarial models, not a language model. No language model sets a price, an amount or a claim decision.
 
-- **Basis risk (the result that matters most).** On real Indian premises data (Prayas ESMI, 5,010 premises outages of 4 h or more, scored on a later period than the thresholds were chosen on): paying on the index alone **missed 70.4%** of real outages, and **35.3% of its payments** went to premises that had power. With the witness rules and a perfect witness: **5.9% missed, 0.0% wrong**. With 30% of witness logs missing: 23.5% missed, 6.0% wrong. Caveats: Indian data, only 8 districts with enough monitors, and the "witness" there is the premises' own monitor, so this is an upper bound.
-- **Trigger design.** Thresholds chosen on 2014–2022: lower line 20% of customers out (`theta_lo`), upper line 90% (`theta_hi`). 90% is the edge of the search grid, not an optimum: at county scale, index-only payment mostly pays the wrong people.
-- **Frequency.** A negative-binomial GLM **did not beat its baselines** on 2023–2024: qualifying events are too rare (34 in training) for overdispersion, so it collapses to the Poisson baseline (deviance 130.233 vs 130.216).
+- **Basis risk (the result that matters most).** On real Indian premises data (Prayas ESMI, 5,010 premises outages of 4 h or more, scored on a later period than the thresholds were chosen on): paying on the index alone **missed 70.4%** of real outages, and **35.3% of its payments** went to premises that had power. With the witness rules and a perfect witness: **5.9% missed, 0.0% wrong**. With 30% of witness logs missing: 23.5% missed, 6.0% wrong. Caveats: Indian data; only 8 districts with enough monitors, and one of them supplies most of the outages; each premises' own monitor is part of its district index; and the "witness" there is the premises' own monitor. So this is an upper bound. An independent audit (`AUDIT.md`) reproduced every number and lists these limits.
+- **Trigger design.** Thresholds chosen on 2014–2022: lower line 20% of customers out (`theta_lo`), upper line 90% (`theta_hi`). 90% is the edge of the search grid, not an optimum, and the objective is nearly flat near it.
+- **Frequency.** A negative-binomial GLM **did not beat its baselines** on 2023–2024 and is indistinguishable from the Poisson one: qualifying events are too rare (34 in training) for overdispersion, so it collapses to the Poisson baseline (deviance 130.233 vs 130.216).
 - **Severity, credibility, pricing.** Generalised Pareto severity; Bühlmann–Straub credibility (every weight estimated at 0, so counties are priced at their state rate); premium = expected events × 60% × P(premises affected) × cover / 12 × (1 + 47.1% risk margin) + $1.00.
 - **Solvency and backtest.** 1,000 simulated members, 20,000 simulated years: 12.3% probability of ruin with no starting capital. Backtest: 2023 loss ratio 0.00, 2024 loss ratio 1.32 (the Houston derecho and Hurricane Beryl). Two test years is far too few to judge.
 
@@ -92,4 +92,4 @@ Go, SQLite, Python, pandas, NumPy, SciPy, statsmodels, React, TypeScript, Vite, 
 7. To see the fraud control, start **spoof-quiet** and press **Power is out**: the claim is R5, flagged for review, and nothing is paid.
 8. **Evidence** (`/evidence`) shows every model result with its provenance; **Operator** (`/operator`) shows policies, claims and the ledger.
 
-Without a browser: `node scripts/judge-e2e.mjs <API URL>/api spoof` runs the fraud case and prints the claim.
+Without a browser: `node scripts/judge-e2e.mjs https://fourhour-api.onrender.com/api spoof` runs the fraud case and prints the claim (Node 20+).

@@ -84,6 +84,8 @@ async function recordJudgePath(browser, policyId, mode) {
   fs.mkdirSync(footageDir, { recursive: true });
   const scenario = mode === 'spoof' ? 'spoof-quiet' : 'derecho-harris-2024';
   const thetaLo = (await getJSON('/analytics/trigger')).theta_lo;
+  // A replay left running (by a previous run) disables the scenario picker; clear it first.
+  await fetch(api + '/replay/reset', { method: 'POST', signal: AbortSignal.timeout(30_000) });
 
   // The witness runs in its own (unrecorded) context, like a second device.
   const wctx = await browser.newContext({ viewport: { width: 900, height: 1000 } });

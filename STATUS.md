@@ -12,20 +12,23 @@ Updated: 2026-11-12 19:20 IST by the lead (ship run). Earlier: Final development
 
 Resume from this file and `TASKS.md` alone.
 
-## Ship run (started 19:05 IST, Mac)
+## Ship run (19:05–20:40 IST, Mac)
+
+Hosted: https://fourhour-web.onrender.com · https://fourhour-api.onrender.com · webhook `37L051887T137272E`
 
 | Item | State | Evidence |
 |---|---|---|
-| Track A restyle | running | worktree `../fourhour-ui-restyle`, branch `ui-restyle`, not merged |
-| B1 repo check | **fail** | `GET api.github.com/repos/doshikaran/FourHour` without auth returns 404: repo is private, so the licence can't be detected publicly. README has all 9 SPEC 10 sections in order; `LICENSE` is MIT |
-| B2 deploy | **blocked** | `RENDER_API_KEY` is not in `.env` |
-| B3 webhook | blocked on B2 | |
-| B4 hosted run | script ready, hosted run blocked on B2 | `scripts/judge-e2e.mjs`; local spoof run PASS: R5 claim `clm_fjfmccpsoh2s`, no payout. Derecho mode not run locally (it sends a payout) |
-| B5 audit | running | independent reviewer |
-| B6 licences | done | `ml/README.md`: figshare API + DataCite agree CC BY 4.0; Dataverse API + DataCite agree CC0 1.0; landing pages bot-blocked (202, empty). README attribution now names the creators and links the licence |
-| B7 screens | script ready, hosted capture blocked on B2 | `scripts/capture-screens.mjs` (Playwright + system Chrome, hard timeouts). Local test PASS: 8 routes captured, spoof video recorded, R5 claim `clm_jlk4azx25d32` |
-| B8 submission pack | drafted | `docs/VIDEO_SCRIPT.md` (~390 words), `docs/DEVPOST.md`, `docs/SUBMISSION_CHECKLIST.md`. Demo URL and video URL placeholders until deploy/upload; numbers to re-check against AUDIT.md |
+| Track A restyle | done, not merged | branch `ui-restyle` (0aa953e + 731b918), worktree `../fourhour-ui-restyle`; typecheck, 112 tests, build, 88 contrast pairs pass |
+| B1 repo check | **fail (human)** | unauthenticated GitHub API returns 404: repo private. README has all 9 SPEC 10 sections in order; `LICENSE` MIT |
+| B2 deploy | pass | Blueprint services (humans); URLs set by API; health sandbox + 6 artifacts; CORS ok |
+| B3 webhook | pass | created by API; capture and payout events verified SUCCESS; payouts confirmed by poll first (~16–20 s), webhook ~30 s later |
+| B4 hosted run | pass | R3 `clm_a6fmawitie6z`, batch `QY3SCENACWZFG` item `VVXDUZFCRZ62W` via poll; spoof R5 `clm_qa2wve6kuc7h` no payout. 1 of 2 allowed runs used |
+| B5 audit | done | `AUDIT.md`; every number reproduced; README fixed; open items for ML/FE listed there |
+| B6 licences | done | `ml/README.md`; human to open the two landing pages once |
+| B7 screens | pass | `docs/screens/` (8 routes, viewport + full), `docs/footage/judge-path-derecho-harris-2024.webm` (68 s; claim `clm_momvyaeh7mnl`, batch `ELEHEBM8UZRR6` item `MJ7C24UEQJP8Y`). Chart sits below the fold in the footage |
+| B8 submission pack | done | `docs/VIDEO_SCRIPT.md`, `docs/DEVPOST.md`, `docs/SUBMISSION_CHECKLIST.md` |
 
+Sandbox payouts tonight: 2 × $30.00 (B4, B7). Every deploy/restart of the free API makes one new $1.36 demo premium charge.
 
 ## Sandbox money calls: 4 runs of 5, plus 1 startup demo premium charge (136 cents) in item 6
 
