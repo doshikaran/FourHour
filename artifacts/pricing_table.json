@@ -1,5 +1,5 @@
 {
-  "model_version": "2026-11-12-e9fbacd-dirty",
+  "model_version": "2026-11-12-0938669",
   "counties": {
     "48201": {
       "expected_events_per_year": 0.25,
@@ -31,8 +31,8 @@
     "t4": 0.6
   },
   "provenance": {
-    "generated_at": "2026-11-12T07:24:08Z",
-    "git_commit": "e9fbacd-dirty",
+    "generated_at": "2026-11-12T07:35:57Z",
+    "git_commit": "0938669",
     "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_pricing_table",
     "data_sources": [
       {

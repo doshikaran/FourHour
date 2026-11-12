@@ -31,8 +31,8 @@
     }
   ],
   "provenance": {
-    "generated_at": "2026-11-12T07:24:09Z",
-    "git_commit": "e9fbacd-dirty",
+    "generated_at": "2026-11-12T07:35:57Z",
+    "git_commit": "0938669",
     "code": "ml/fourhour_ml/models.py, ml/fourhour_ml/build.py:build_solvency",
     "data_sources": [
       {

@@ -3375,8 +3375,8 @@
     "sha256": "d5d75ea4ef3943446aaf0623e9b451cb4e7796d20cc379de9cf497106ebab2e6"
   },
   "provenance": {
-    "generated_at": "2026-11-12T07:24:10Z",
-    "git_commit": "e9fbacd-dirty",
+    "generated_at": "2026-11-12T07:35:58Z",
+    "git_commit": "0938669",
     "code": "ml/fourhour_ml/build.py:build_scenarios",
     "data_sources": [
       {

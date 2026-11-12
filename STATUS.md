@@ -2,12 +2,15 @@
 
 Updated: 2026-11-12 12:50 IST by the lead. Final development pass in progress (humans' items 1–6); freeze 15:30 IST. Submission: 01:30 IST 13 Nov.
 
-## Final pass (items 1–6)
+## Final pass (items 1–6), 13:25 IST
 
-- Contract 1.8 written (t4-only pricing, `offered`, `capital_assumption`, `findings`, startup demo policy, `GET /api/demo`); SPEC.md 4 and 5.5 updated.
-- Running: ML (item 2 Harris diagnostic, then items 1, 3, 4 artifact changes; will regenerate from a clean commit after the lead commits its code), backend (items 1, 3, 5), frontend (items 1, 3, 4, 5).
-- Lead: DEPLOY.md updated for the startup demo policy; README after the new numbers; item 6 clean clone after the push.
-- Previous pass's work (staged) is NOT yet committed: the humans must run `scripts/push.sh` (git identity now set).
+- Contract 1.8 (t4-only pricing, `offered`, `capital_assumption`, `findings`, startup demo policy + `demo_policy` table, `GET /api/demo`); SPEC 4 and 5.5 updated.
+- Backend DONE (items 1, 3, 5): t4-only quote, `TestPricedScheduleEqualsPaidSchedule`, 422 `county_not_offered`, startup demo policy (one row, first premium only), `GET /api/demo`, unknown device 404 `device_not_found`.
+- Frontend DONE (items 1, 3, 4, 5) against mock: 112 tests pass.
+- ML DONE (items 1, 2, 3, 4): Harris finding = case (2), share peaked 0.2495 in Uri, longest run 2.75 h, no bug; t4-only pricing (Harris $50/$150/$300 = 136/209/319 cents), Cook not offered, capital_assumption 0 starting capital. pytest 163.
+- Checkpoint commit `0938669` (local; push pending human sign-in). All suites passed on it (backend -race all ok, ml 163, frontend 112 + build).
+- In progress: ML regenerating all artifacts from clean `0938669`. Then: lead commits artifacts + README, human pushes, lead runs item 6 clean clone.
+
 Resume from this file and `TASKS.md` alone.
 
 ## Sandbox runs used: 4 of 5
