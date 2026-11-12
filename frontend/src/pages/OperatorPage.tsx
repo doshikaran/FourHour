@@ -41,10 +41,10 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 const gridTheme = themeQuartz.withParams({
   fontFamily: 'inherit',
-  fontSize: 15,
+  fontSize: 13,
   headerFontSize: 13,
-  rowHeight: 44,
-  headerHeight: 42,
+  rowHeight: 52,
+  headerHeight: 46,
   accentColor: 'var(--accent)',
   backgroundColor: 'var(--surface)',
   foregroundColor: 'var(--text)',
@@ -63,6 +63,10 @@ const defaultColDef: ColDef = { sortable: true, resizable: true, filter: true, f
 type Tab = 'claims' | 'policies' | 'ledger';
 
 export function OperatorPage() {
+  const api = useApi();
+  const overview = useAsync(() => api.claims(), 'operator-overview');
+  const claims = overview.status === 'ok' ? overview.data.claims : null;
+
   const [tab, setTab] = useState<Tab>('claims');
   const [search, setSearch] = useState('');
   const tabs: { id: Tab; label: string }[] = [
@@ -79,6 +83,11 @@ export function OperatorPage() {
       <p className="row small">
         <SimulatedChip what="members" /> <SandboxChip /> Members are simulated people; every amount moved through the PayPal sandbox.
       </p>
+      <div className="operator-overview">
+        <div><span>Claims recorded</span><strong>{claims?.length ?? '—'}</strong><small>Across the pool</small></div>
+        <div><span>Approved claims</span><strong>{claims?.filter((c) => c.decision === 'paid').length ?? '—'}</strong><small>Qualified under the rules</small></div>
+        <div><span>Approved amount</span><strong>{claims ? formatCents(claims.filter((c) => c.decision === 'paid').reduce((sum, c) => sum + c.amount_cents, 0)) : '—'}</strong><small>PayPal sandbox · claim decisions</small></div>
+      </div>
       <div className="tabs" role="tablist" aria-label="Operator views">
         {tabs.map((t) => (
           <button

@@ -37,7 +37,10 @@ export function EvidencePage() {
         title="Evidence"
         purpose="Backtest, pricing, solvency, basis-risk and data-quality results, each with where it came from."
       />
-      <div className="stack">
+      <nav className="evidence-nav" aria-label="Evidence sections">
+        {PANELS.map((p) => <a key={p.name} href={`#evidence-${p.name}`}>{p.title}<span aria-hidden="true">↗</span></a>)}
+      </nav>
+      <div className="stack evidence-panels">
         {PANELS.map((p) => (
           <Panel key={p.name} {...p} />
         ))}
@@ -53,7 +56,7 @@ function Panel({ name, title, what }: { name: AnalyticsName; title: string; what
   const names: Record<string, string> = {};
   if (counties.status === 'ok') for (const c of counties.data.counties) names[c.fips] = `${c.name}, ${c.state}`;
   return (
-    <section className="card" aria-label={title}>
+    <section id={`evidence-${name}`} className="card evidence-panel" aria-label={title}>
       <h2>{title}</h2>
       <p className="muted">{what}</p>
       {s.status === 'loading' && <Loading what={`the ${title.toLowerCase()} result`} />}

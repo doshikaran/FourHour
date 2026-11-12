@@ -46,7 +46,7 @@ describe('routes', () => {
     it(`renders ${c.path} against the mock with no error`, async () => {
       const { container } = renderAt(c.path);
       expect(screen.getByRole('heading', { level: 1, name: c.heading })).toBeTruthy();
-      expect(screen.getByText(/Mock data\./)).toBeTruthy();
+      expect(screen.getByText(/Preview data/)).toBeTruthy();
       await waitFor(() => expect(settled(container)).toBe(true));
       expect([...container.querySelectorAll('.state-error')].map((e) => e.textContent)).toEqual([]);
       expect(screen.getByText(/a sandbox prototype, not an insurance offer/)).toBeTruthy();

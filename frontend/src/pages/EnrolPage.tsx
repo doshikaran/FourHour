@@ -67,14 +67,14 @@ export function EnrolPage() {
             )}
           </AsyncView>
         </div>
-        <div className="card" style={{ minHeight: 300 }}>
+        <div className="card quote-card" style={{ minHeight: 300 }}>
           <h2>2. Your quote</h2>
           {selected && !selected.offered ? (
             <NotOfferedState reason={selected.not_offered_reason} />
           ) : fips ? (
             <QuotePanel fips={fips} cover={cover} trigger={trigger} />
           ) : (
-            <p className="muted">Choose a county to see a quote.</p>
+            <div className="quote-placeholder"><span aria-hidden="true">↗</span><p>Choose a county to see a quote.</p><small>Your monthly price and payout breakdown will appear here.</small></div>
           )}
         </div>
       </div>
