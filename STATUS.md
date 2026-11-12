@@ -20,7 +20,7 @@ Resume from this file and `TASKS.md` alone.
 | B1 repo check | **fail** | `GET api.github.com/repos/doshikaran/FourHour` without auth returns 404: repo is private, so the licence can't be detected publicly. README has all 9 SPEC 10 sections in order; `LICENSE` is MIT |
 | B2 deploy | **blocked** | `RENDER_API_KEY` is not in `.env` |
 | B3 webhook | blocked on B2 | |
-| B4 hosted run | blocked on B2 | |
+| B4 hosted run | script ready, hosted run blocked on B2 | `scripts/judge-e2e.mjs`; local spoof run PASS: R5 claim `clm_fjfmccpsoh2s`, no payout. Derecho mode not run locally (it sends a payout) |
 | B5 audit | running | independent reviewer |
 | B6 licences | done | `ml/README.md`: figshare API + DataCite agree CC BY 4.0; Dataverse API + DataCite agree CC0 1.0; landing pages bot-blocked (202, empty). README attribution now names the creators and links the licence |
 | B7 screens | blocked on B2 | |
