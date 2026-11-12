@@ -2,18 +2,17 @@
 
 Updated: 2026-11-12 12:50 IST by the lead. Final development pass in progress (humans' items 1–6); freeze 15:30 IST. Submission: 01:30 IST 13 Nov.
 
-## Final pass (items 1–6), 13:25 IST
+## Final pass (items 1–6): DONE 13:20 IST
 
-- Contract 1.8 (t4-only pricing, `offered`, `capital_assumption`, `findings`, startup demo policy + `demo_policy` table, `GET /api/demo`); SPEC 4 and 5.5 updated.
-- Backend DONE (items 1, 3, 5): t4-only quote, `TestPricedScheduleEqualsPaidSchedule`, 422 `county_not_offered`, startup demo policy (one row, first premium only), `GET /api/demo`, unknown device 404 `device_not_found`.
-- Frontend DONE (items 1, 3, 4, 5) against mock: 112 tests pass.
-- ML DONE (items 1, 2, 3, 4): Harris finding = case (2), share peaked 0.2495 in Uri, longest run 2.75 h, no bug; t4-only pricing (Harris $50/$150/$300 = 136/209/319 cents), Cook not offered, capital_assumption 0 starting capital. pytest 163.
-- Checkpoint commit `0938669` (local; push pending human sign-in). All suites passed on it (backend -race all ok, ml 163, frontend 112 + build).
-- In progress: ML regenerating all artifacts from clean `0938669`. Then: lead commits artifacts + README, human pushes, lead runs item 6 clean clone.
+- Contract 1.8; SPEC 4 and 5.5 updated.
+- Items 1, 3, 4, 5 built (backend, frontend, ML); item 2 Harris finding: no bug (Uri peak 0.2495, longest run at 0.20 = 2.75 h), recorded in `data_quality.json` findings and README.
+- Artifacts regenerated from clean `0938669`; committed in `e564b91`.
+- Item 6 clean clone (local clone of e564b91, copy of .env, README steps): backend starts, 6 artifacts loaded, startup demo policy `pol_57dozqd52j6g` charged 136 cents (order `7SS37135JB9144335`, capture `70968229F6247641B`, COMPLETED); restart on same DB: `created:false`, no charge; Cook quote 422 `county_not_offered`; 100-cent cover refused; frontend `npm ci` + `npm run dev` serves. Not checked: pages in a browser (headless Chrome hung on the live stream). README fix: ml test setup step.
+- Commits `0938669`, `e564b91` (+ final) are LOCAL: humans must `git push origin main`.
 
 Resume from this file and `TASKS.md` alone.
 
-## Sandbox runs used: 4 of 5
+## Sandbox money calls: 4 runs of 5, plus 1 startup demo premium charge (136 cents) in item 6
 
 | Run | When | What | IDs |
 |---|---|---|---|

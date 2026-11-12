@@ -130,7 +130,7 @@ Needs Go 1.27+, Node 20.19+ or 22.12+, and a PayPal sandbox app with Vault and P
    npm run dev
    ```
    Open `http://localhost:5173` and follow the judge path.
-5. **Tests:** `cd backend && go test ./...`; `cd ml && python -m pytest`; `cd frontend && npm test`.
+5. **Tests:** `cd backend && go test ./...`; `cd frontend && npm test`; for `ml/`, create its virtual environment first as described in `ml/README.md`, then run `python -m pytest` with that environment's Python.
 
 Deploying to Render: see `DEPLOY.md`.
 
