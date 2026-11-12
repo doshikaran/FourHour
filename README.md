@@ -1,139 +1,112 @@
 # FourHour
 
-Automatic power-outage cover for small food sellers, paid through PayPal.
+FourHour is an automatic power-outage cover prototype for food trucks, home bakers, and small grocers. A seller gets a quote, approves saving a PayPal wallet, and registers a phone or laptop at the business as a **witness**. The device signs a log of charger power changes. When a qualifying county outage overlaps a four-hour witness outage, FourHour creates a claim and sends a PayPal Sandbox payout of **60% of the selected cover**. [USDA guidance on keeping food cold during a power outage](https://ask.fsis.usda.gov/article/How-do-you-keep-food-safe-during-a-power-failure)
 
-## What it does
+**[Open the live demo](https://fourhour-web.onrender.com/live)** · [Get a quote](https://fourhour-web.onrender.com/enrol) · [Evidence](https://fourhour-web.onrender.com/evidence) · [Operator dashboard](https://fourhour-web.onrender.com/operator) · [API health](https://fourhour-api.onrender.com/api/health)
 
-USDA's Food Safety and Inspection Service advises that perishable food in a refrigerator without power is safe for only about 4 hours ([Keep Your Food Safe During Emergencies](https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/emergencies/keep-your-food-safe-during-emergencies)). A food truck owner, home baker or corner grocer with no generator loses their stock in a short outage, and ordinary business cover is built for long outages and pays slowly. With FourHour, a member saves their PayPal wallet once and pays a small monthly premium from it. A laptop or phone left on a charger at their premises becomes a **witness**: it keeps a signed, hash-chained log of when its charger loses power. When the county's outage index (DOE EAGLE-I, the share of customers without power) stays above a threshold for 4 hours and the member's own witness confirms the outage at their premises, the rule engine creates a claim and sends a PayPal Payout of 60% of the cover. No claim form. A witness on its own can never create a payout: a phone unplugged by hand while the grid is fine pays nothing.
+### Try the hosted replay
 
-## PayPal API calls
+1. Open **Live Replay** and register a witness from the demo panel. The seeded $50 Harris County policy lets you try the replay without a PayPal login.
+2. Start **Houston derecho, Harris County, May 2024** (`derecho-harris-2024`). When the index crosses **20%**, select **Power is out** on the witness page.
+3. After four simulated hours of qualifying evidence, open the R3 claim to see the rule, witness log, and **$30 Sandbox payout** status.
+4. Try **Quiet week, Harris County, 2024** (`spoof-quiet`) with the same witness action. The claim is flagged for review and pays **$0**.
 
-All calls go to the sandbox (`https://api-m.sandbox.paypal.com`); the service refuses to start with any other base URL. Code: `backend/internal/paypal/`.
+The Render API can take up to a minute to wake. Each qualifying replay draws from the demo account’s finite PayPal Sandbox balance.
 
-| # | Endpoint | Purpose | Idempotency | Code |
-|---|---|---|---|---|
-| P1 | `POST /v1/oauth2/token` | Access token, cached until shortly before expiry | none | `client.go` `accessToken` |
-| P2 | `POST /v3/vault/setup-tokens` | Start saving the member's PayPal wallet (`usage_type: MERCHANT`) | `PayPal-Request-Id: vst-{policy_id}` | `client.go` `CreateSetupToken` |
-| P3 | `POST /v3/vault/payment-tokens` | Exchange the approved setup token for a payment token | `PayPal-Request-Id: vpt-{policy_id}` | `client.go` `CreatePaymentToken` |
-| P4 | `POST /v2/checkout/orders` | Charge a monthly premium against the vaulted wallet, buyer not present | `PayPal-Request-Id: prem-{policy_id}-{period}` | `client.go` `CreateOrder` |
-| P5 | `POST /v1/payments/payouts` | Pay a claim to the member's PayPal account | `sender_batch_id: clm-{policy_id}-{outage_event_id}-{tier}` | `client.go` `CreatePayout` |
-| P6 | `GET /v1/payments/payouts/{batch_id}` | Poll a payout until its item reaches a final status | read-only | `client.go` `GetPayoutBatch` |
-| P8 | `POST /v1/notifications/verify-webhook-signature` | Verify a webhook before it changes anything | read-only | `p7p8.go` `VerifyWebhookSignature` |
+## PayPal integration
 
-Webhook endpoint: `POST /api/paypal/webhook` (`backend/internal/service/webhook.go`). Payout confirmation arrives by webhook or, when no public URL is registered, by polling P6.
+All payment activity uses PayPal Sandbox. The backend records charges and payouts before making the API call and uses stable request or batch IDs to handle retries.
 
-Money rules: amounts are integer cents end to end; every money row is written locally with its idempotency key before the PayPal call; the database allows one payout per (policy, outage event, tier) and appends each money movement to the ledger once.
+| PayPal tool | Endpoint | Purpose | Code |
+| --- | --- | --- | --- |
+| OAuth 2.0 | `POST /v1/oauth2/token` | Authenticate backend requests | [Client](backend/internal/paypal/client.go) |
+| Vault | `POST /v3/vault/setup-tokens` | Start wallet approval | [Client](backend/internal/paypal/client.go) |
+| Vault | `POST /v3/vault/payment-tokens` | Exchange the approved setup token for a payment token | [Client](backend/internal/paypal/client.go) |
+| Orders v2 | `POST /v2/checkout/orders` | Charge the premium against the saved wallet | [Policy service](backend/internal/service/policies.go) |
+| Payouts v1 | `POST /v1/payments/payouts` | Send a qualifying claim payment | [Payout service](backend/internal/service/payouts.go) |
+| Payouts v1 | `GET /v1/payments/payouts/{batch_id}` | Check for a final payout status | [Payout service](backend/internal/service/payouts.go) |
+| Webhooks | `POST /v1/notifications/verify-webhook-signature` | Verify incoming payment events | [Verification client](backend/internal/paypal/p7p8.go) |
 
-## The AI
+## Models and evidence
 
-FourHour's "AI" is a set of statistical and actuarial models, not a language model. No language model sets a price, an amount or a claim decision. Every number below is read from a file in `artifacts/`, generated by code in `ml/` from real data, with a `provenance` block naming the commit, data files and seed. Models are fitted on 2014–2022 and evaluated on 2023–2024. No 2023–2024 row reaches fitting, threshold selection or tuning: the years are set in `ml/fourhour_ml/config.py`, `ml/fourhour_ml/build.py` filters every fitting and selection input to training years, and the fitting functions carry a `@train_only` guard (`ml/fourhour_ml/split.py`) that is tested. One honest exception: the event-reconstruction rules (the 2-hour gap bridge and the dropout rule) were revised after the original rule split Hurricane Beryl (July 2024, a test year) into two events, and the UTC check used the 2024 derecho. No model was fitted on those storms, but the rule design saw them. An independent audit is in `AUDIT.md`.
+The Python pipeline fits statistical models on **2014–2022** outage data and evaluates them on **2023–2024**. The Go service reads the resulting [versioned artifacts](artifacts/) and applies explicit claim rules. Hurricane Beryl influenced event reconstruction, and the Houston derecho informed the timestamp check. [Modeling guide](ml/README.md)
 
-### Does the witness fix basis risk? (the result that matters most)
+| Component | Method and result |
+| --- | --- |
+| Outage reconstruction | Builds events from 15-minute readings and handles short gaps and feed dropouts. Excluded 54 of 198 training county-years for low coverage. [Data quality](artifacts/data_quality.json) |
+| Trigger thresholds | A grid search selected **20%** and **90%** county outage thresholds. The upper threshold sits at the grid boundary. [Trigger parameters](artifacts/trigger_params.json) |
+| Frequency and duration | The negative-binomial frequency model performed similarly to the Poisson baseline. The generalized Pareto model estimated an 81% chance that a qualifying event lasts 24 hours. The evaluation data showed 68%. [Backtest](artifacts/backtest.json) |
+| Credibility and pricing | Bühlmann–Straub county weights were zero, so quotes use state-level rates. Harris and Miami-Dade quote **$1.36**, **$2.09**, and **$3.19** per month for **$50**, **$150**, and **$300** of cover. Cook County’s pricing group had no qualifying training event and receives no quote. [Pricing table](artifacts/pricing_table.json) |
+| Portfolio backtest | The simulated loss ratio was **0.00 in 2023** and **1.32 in 2024**. Two Harris County events drove 351 simulated claims in 2024. [Backtest](artifacts/backtest.json) |
+| Solvency | Across 20,000 simulated years, payouts exceeded net premium income in **12.3%** of years under a zero-starting-capital assumption. One training storm year drove simulated losses. [Solvency model](artifacts/solvency.json) |
 
-The objection: "a county outage count doesn't prove my fridge was off." Prayas ESMI recorded minute-level supply at individual premises in India. For each district with enough monitors we built a district index (share of monitors without supply) and scored payment schemes against each premises' own outages of 4 hours or more, with thresholds chosen on 2014-10-22 to 2016-11-24 and scored on 2016-11-25 to 2018-12-31 (`basis_risk.json`).
+### Basis risk
 
-| Scheme (5,010 premises outages of 4 h or more) | Missed (not paid) | Wrong (paid, premises had power) |
-|---|---|---|
-| Index only | 70.4% | 35.3% of payments |
-| Full rules, perfect witness | 5.9% | 0.0% |
-| Full rules, 10% of witness logs missing | 10.9% | 1.7% |
-| Full rules, 30% of witness logs missing | 23.5% | 6.0% |
+The Prayas ESMI study evaluated **5,010 premises outages** lasting at least four hours across eight Indian districts.
 
-Caveats, read with the table: this is **Indian premises data**, not US food sellers; only **8 districts** passed the eligibility cut-off (at least 720 hours in each half with 8 or more monitors reporting at once); their median active monitors range from 6 to 16, so each district index rests on a handful of monitors and is **noisier than a county utility count**; in this study the "witness" is the premises' own supply monitor, so the **perfect-witness row is an upper bound** on what a real phone or laptop witness achieves. Two further limits found by the independent audit (`AUDIT.md`): each premises' own monitor is part of its district index, which flatters every row because one monitor in eight moves the index by 12.5%; and one district (Sitapur) supplies most of the premises outages, so the result is mostly about one district. The 10% and 30% missing-log rows come from one random draw.
+| Evidence used | Eligible outages missed | Payments to premises that had power |
+| --- | ---: | ---: |
+| District index alone | 70.4% | 35.3% |
+| Index plus a perfect witness | 5.9% | 0.0% |
+| Index plus a witness with 10% of logs missing | 10.9% | 1.7% |
+| Index plus a witness with 30% of logs missing | 23.5% | 6.0% |
 
-### The other models, with their out-of-sample results
-
-| Model | Fitted on | Result | Artifact |
-|---|---|---|---|
-| **Event reconstruction.** 15-minute EAGLE-I share-out per county; runs above a threshold; missing gaps up to 2 h bridged; partial-feed dropouts (a 90% fall that recovers within 2 h) treated as missing; qualifying runs within 72 h merged into one event | TX, FL, IL counties 2014–2024; of the 198 training-year county-years in the model universe, 54 below the 0.70 coverage floor were excluded from fitting | 97.2% of gaps inside large training events fall within the 2 h bridge (104 events examined). Timestamps judged to be UTC from the Houston derecho's onset time. The backend's live replay reproduces the pipeline's runs exactly on the derecho window (tested) | `data_quality.json` |
-| **Trigger design.** Grid search over (`theta_lo`, `theta_hi`), trading wrong payouts against missed payouts | 2014–2022 | `theta_lo` = 0.20, `theta_hi` = 0.90. 0.90 is the **edge of the 190-pair grid, not an optimum**, and the objective is nearly flat near it; the lower threshold moves between 0.15 and 0.40 across the sensitivity cases in the artifact | `trigger_params.json` |
-| **Frequency.** Negative-binomial GLM of qualifying events per county-month (month-of-year and state effects) against a Poisson GLM and each county's historical mean | 144 county-years, 34 qualifying events | **Did not beat its baselines on 2023–2024; in practice it is indistinguishable from the Poisson baseline.** Qualifying events are rare (34 in training, 19 in the test years across all counties), so there is almost no overdispersion to model: the NB dispersion is estimated near zero and the model collapses to Poisson (deviance 130.233 vs 130.216; log score 0.158 for both). The audit found that a fully converged NB fit lands a hair below Poisson instead, so the tiny gap is optimiser noise, not a result. The historical-mean baseline scores infinite, because it predicts zero for counties with no training event (Harris and Hidalgo) that then had test events | `backtest.json` |
-| **Severity.** Generalised Pareto on run length beyond 4 h | 34 training events | Fit statistic: KS 0.146, p = 0.42 (optimistic, because the parameters come from the same data). P(24 h \| event): fitted 0.81, training 0.82, **test 0.68**: it got the training share right and overstated the test-year share by 13 points. It no longer affects price, because only the 4-hour tier is paid | `backtest.json` |
-| **Credibility.** Bühlmann–Straub blend of county and state rates | 22 counties | Between-county variance estimated as not positive, so **every credibility weight is 0**: each county is priced at its state's rate | `backtest.json` |
-| **Pricing.** Premium = expected events × 60% × P(premises affected) × cover / 12 × (1 + risk margin) + $1.00 expense load. Priced on exactly the schedule paid (the 4-hour tier); a backend test fails if the two ever differ | 2014–2022 | Harris and Miami-Dade: 0.25 qualifying events a year at the state rate; P(affected) 0.397; risk margin 47.1%. Monthly premium for $50 / $150 / $300 cover: **$1.36 / $2.09 / $3.19**. **Cook County is not offered**: no outage reached 20% of customers for 4 hours in its pricing group in 2014–2022, so there is no history to set a price from | `pricing_table.json` |
-| **Solvency.** 1,000 simulated members (500 each in Harris and Miami-Dade, the offered counties); whole historical years resampled per county to keep storm clustering; 20,000 simulations | 2014–2022 | **Capital assumption: the pool starts each year with no capital**, so only that year's premiums net of the expense load ($14,536.56) pay claims; ruin is a year whose payouts exceed that. On that basis the probability of ruin is **12.3%**; capital for a 1-in-200 year is $13,693.44; an aggregate stop-loss layer (attaching at $26,280.00, limit $1,950.00) is priced at $62.90. Read this with care: the fitted training years hold no qualifying event for Harris and one for Miami-Dade (`solvency.json` notes), so the whole simulated loss comes from a single storm year, and Harris, which produced all of the 2024 loss, adds no simulated loss at all | `solvency.json` |
-| **Backtest.** The frozen pool run through the test years | 2014–2022 models | 2023: no qualifying events, loss ratio 0.00. 2024: 2 events, both in Harris (the derecho and Hurricane Beryl), 351 simulated claims paid, **loss ratio 1.32**. Two years is far too few to judge a loss ratio | `backtest.json` |
-
-**Harris County check.** Harris has no qualifying event in its training years, although it has usable feed data for 2018–2022. We checked whether the event logic hid one: during Winter Storm Uri (February 2021) the EAGLE-I share for Harris peaked at 0.2495 but never stayed at or above 0.20 for 4 continuous hours (longest run 2.75 h), so no event qualified; the dropout rule, bridging and coverage exclusion removed nothing. This was decided on training years only, and no threshold or rule was changed (`data_quality.json` `findings`). Harris is priced at the Texas state rate.
-
-Rules (`SPEC.md` section 4): R1 index at `theta_hi` 4 h + witness confirms → pay 60% of cover; R2 index at `theta_hi` 4 h, no witness → pay 30%; R3 index at `theta_lo` 4 h + witness confirms → pay 60%; R4 index at `theta_hi` but the witness shows power stayed on → declined with reason; R5 witness reports an outage with the index quiet → no payout, flagged for review.
+The perfect witness was the premises’ own supply monitor. Removing that monitor from the district index raised its miss rate to **17.1%** in the audit. One district supplied 71% of the evaluated outages, and each missing-log scenario uses one simulated draw. [Study results](artifacts/basis_risk.json)
 
 ## What is real and what is simulated
 
-| Real | Simulated |
-|---|---|
-| EAGLE-I outage records for Texas, Florida and Illinois, 2014–2024, and the replayed storm windows (labelled "real data") | Members, their premises and loss amounts (labelled "simulated") |
-| ESMI premises-level supply records used in the basis-risk study | The replay clock: a historical storm replays at speed |
-| Every model result, with its provenance | The pool in the backtest and solvency simulation |
-| PayPal sandbox calls: vault, premium charge, payout, webhook verification. Money moves between sandbox accounts | The witness entries in a replay are real signed entries from a real browser, but replay mode maps them onto the simulated clock |
+| Component | Demo behavior |
+| --- | --- |
+| Outage readings and model inputs | Historical county and premises data |
+| Witness | Browser-signed events mapped onto the simulated replay clock |
+| Policies and portfolio | Demo sellers, simulated cover, and backtested claims |
+| Payment integration | Actual Vault, Orders, Payouts, and Webhook calls within PayPal Sandbox |
 
 ## Data sources
 
-- **DOE EAGLE-I recorded electricity outages**, Oak Ridge National Laboratory, figshare, [doi:10.6084/m9.figshare.24237376.v4](https://doi.org/10.6084/m9.figshare.24237376.v4). Licence: CC BY 4.0. Attribution: *Brelsford, C., Tennille, S., Myers, A., Chinthavali, S., Tansakul, V., Denman, M., et al. (2023). The Environment for Analysis of Geo-Located Energy Information’s Recorded Electricity Outages 2014-2025. figshare. [doi:10.6084/m9.figshare.24237376.v4](https://doi.org/10.6084/m9.figshare.24237376.v4). EAGLE-I, Oak Ridge National Laboratory / U.S. Department of Energy, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). FourHour uses derived aggregates and scenario slices of the 2014–2024 files; changes were made.* Known gaps: scrape gaps and partial-feed dropouts during large events; Harris County's 2024 derecho window has 915 of 960 intervals; Hurricane Beryl's onset is missing from the feed; coverage is thin before 2018 in some counties, Harris County included (under 25% of intervals present in 2014–2017); per county-year coverage is in `data_quality.json`.
-- **Prayas (Energy Group) Electricity Supply Monitoring Initiative (ESMI)**, Harvard Dataverse, [doi:10.7910/DVN/CLLZZM](https://doi.org/10.7910/DVN/CLLZZM). Licence: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (no attribution required; cited anyway).
-- Raw data is never committed. `ml/README.md` gives the download steps and the single command that regenerates `artifacts/`.
+- **EAGLE-I**, Brelsford, Tennille, Myers, Chinthavali, Tansakul, Denman et al. (2023), Oak Ridge National Laboratory / U.S. Department of Energy. FourHour derives county aggregates and replay slices from the 2014–2024 files. Coverage varies by county and year, and storms can interrupt the feed. [Dataset](https://doi.org/10.6084/m9.figshare.24237376.v4) · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) · [Coverage report](artifacts/data_quality.json)
+- **Electricity Supply Monitoring Initiative**, Prayas (Energy Group). Premises-level supply readings from India used to measure basis risk. [Dataset](https://doi.org/10.7910/DVN/CLLZZM) · [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
 
 ## Limitations
 
-- **Cover in practice requires a witness.** Index-only payment (R2) needs at least 90% of a county's customers out for 4 hours, and 0.90 is the edge of the search grid, not a fitted optimum, so R2 rarely pays (major hurricanes only). In the derecho replay the index peaks near 27%, so with no witness nothing is paid.
-- **Outages affecting less than 20% of a county (`theta_lo`) are not covered**, even if the member's premises is dark. That is a limit of county-level data.
-- **Counties with no history are not offered** (Cook County today), and offered counties are priced at their state's rate because credibility weights are 0.
-- **Basis risk.** A county index does not prove a particular fridge was off. The ESMI study measures this on Indian premises data with few monitors per district and a perfect witness, so its numbers are an upper bound on what a real witness achieves.
-- **The witness can be spoofed on its own** (unplug the charger). That is why a witness can confirm or contradict an index event but never create one (R5).
-- **Self-reported entries are weaker than sensed ones.** The witness page always offers "Power is out" / "Power is back" buttons, and they are the only option in browsers without the Battery Status API (Safari, iOS). Entries made this way are labelled "self-reported", but the rules treat them the same as sensed charger events.
-- **R2/R4 incentive.** A member with no witness can still get 30% of cover (R2), while a member whose witness shows power stayed on gets nothing (R4). That could discourage registering a witness. A production design would price the two cases differently.
-- **Only the 4-hour tier is paid** (60% of cover). A 24-hour top-up for frozen stock was designed and cut; it is neither paid nor priced.
-- **Small premiums carry a high share of fixed payment fees.** A premium of one to three dollars a month leaves little after per-transaction fees; the $1.00 expense load is a team assumption, not a measured cost.
-- **Thin evidence.** The frequency model did not beat its baselines, credibility weights are all 0, the solvency result assumes no starting capital, and the backtest has two test years with two qualifying events in the offered counties. EAGLE-I gaps and feed dropouts affect event lengths.
-- The witness wrong-confirmation rate (0.10) and witness take-up (0.5) used in trigger design are team assumptions, not measured values; `trigger_params.json` reports how the chosen thresholds change across them.
+- **County resolution.** Local outages below 20% of county customers fall outside the payout rules. The county index is an imperfect measure of power at a specific business.
+- **Witness reliability.** Unplugging a charger can mimic an outage. The engine flags an uncorroborated witness outage for review. Manual reports use the same decision rules as sensed events.
+- **Witness incentives.** At the 90% threshold, R2 can pay 30% of cover when a log is absent, while R4 declines a claim when a log is present without a qualifying witness outage.
+- **Thin pricing evidence.** The portfolio backtest spans two years. The $1 expense load and assumptions about witness availability and false reports need field validation.
+- **Demo infrastructure.** The hosted API uses temporary SQLite storage. A restart can clear demo state.
 
-## Framing
+FourHour is a sandbox prototype of a pricing, trigger, and claims engine for a licensed carrier.
 
-FourHour is the pricing, trigger and claims engine a licensed carrier would run; a sandbox prototype, not an insurance offer.
+## Run locally
 
-## Running it
+The React and TypeScript frontend uses Vite and AG Grid Community. The Go backend serves the API and live replay stream, and SQLite stores policy, witness, claim, and ledger records.
 
-### Judge path (hosted app, no PayPal login)
+**Frontend preview** — Node 20.19+ (20.x) or 22.12+.
 
-Hosted app: **https://fourhour-web.onrender.com** (API: https://fourhour-api.onrender.com/api/health). A demo member with an active $50 Harris County policy is created automatically when the server starts.
+```sh
+cd frontend
+npm ci
+npm run dev:mock
+```
 
-1. Open the hosted app's **Live** page (`/live`). If it takes a minute to load, the free host is waking up.
-2. In the **Run the demo** box, open the witness link on the device you are using (any browser; a laptop on its charger in Chrome senses unplugging) and register it.
-3. Back on Live, start the **derecho-harris-2024** replay (the Houston derecho, May 2024, real EAGLE-I data).
-4. When the index crosses the lower line (20%), unplug the charger or press **Power is out** on the witness page, and leave it that way.
-5. About 4 simulated hours later the claim is decided (rule R3), and the payout goes from "sending" to "confirmed". Open the claim to see the rule, the index curve, the witness log and the PayPal payout IDs.
+Open [localhost:5173](http://localhost:5173). Preview mode uses fixtures.
 
-**Every replay with a confirmed witness sends a real sandbox payout** (60% of the $50 cover, $30.00) from the team's sandbox business account, whose balance is finite. Without a witness, nothing is paid: the index never reaches the 90% index-only line. The `spoof-quiet` replay shows the fraud control: unplugging while the index is quiet is flagged for review and pays nothing.
+**Full Sandbox stack** — Go 1.27+ and a PayPal Sandbox app with Vault and Payouts enabled.
 
-### Enrol path (with a PayPal sandbox personal account)
+1. Set up a funded Sandbox business account and Sandbox personal accounts for premium payment and payout receipt.
+2. Copy [`.env.example`](.env.example) to `.env` and fill in the app credentials. Set `PAYPAL_BASE_URL` to `https://api-m.sandbox.paypal.com`, `APP_BASE_URL` to `http://localhost:8080`, `FRONTEND_URL` to `http://localhost:5173`, `VITE_API_BASE_URL` to `http://localhost:8080/api`, and `VITE_USE_MOCK` to `false`. For the seeded replay policy, also set `DEMO_VAULT_TOKEN`, `SANDBOX_MEMBER_EMAIL`, and `SANDBOX_PAYOUT_EMAIL`.
+3. From the repository root, run the backend in one terminal and the frontend in another.
 
-1. Open `/enrol`, pick Harris County or Miami-Dade County and a cover. The quote shows how the premium is built.
-2. Enter your details with a **sandbox** personal account email, continue to PayPal, log in with that sandbox account and approve saving the wallet.
-3. You return to your policy page with the first premium charged. Open the witness link from there, then follow steps 3–5 above for your own policy.
+```sh
+(cd backend && go run ./cmd/fourhour -env-file ../.env)
+```
 
-### Local run
+```sh
+(cd frontend && npm ci && npm run dev)
+```
 
-Needs Go 1.27+, Node 20.19+ or 22.12+, and a PayPal sandbox app with Vault and Payouts enabled. Python 3.12+ is needed only to regenerate artifacts (the committed `artifacts/` are enough to run the app).
+Check [local API health](http://localhost:8080/api/health) for the six loaded artifacts. See the [backend guide](backend/README.md) for tests and Sandbox setup, the [modeling guide](ml/README.md) to regenerate artifacts with Python 3.12+, and [`render.yaml`](render.yaml) for the Render deployment.
 
-1. **Sandbox accounts** (developer.paypal.com → Sandbox): one business account with a positive balance (it funds payouts) and two personal accounts, one to pay premiums and one to receive payouts. On the app, enable Vault and Payouts.
-2. **Configure.** Copy `.env.example` to `.env` at the repo root and fill it in. For a local run: `PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com`, `APP_BASE_URL=http://localhost:8080`, `FRONTEND_URL=http://localhost:5173`, `VITE_API_BASE_URL=http://localhost:8080/api` (it must end in `/api`), `VITE_USE_MOCK=false`. `PAYPAL_WEBHOOK_ID` can stay empty locally; payouts are then confirmed by polling. Set `DEMO_VAULT_TOKEN`, `SANDBOX_MEMBER_EMAIL` and `SANDBOX_PAYOUT_EMAIL` to get the startup demo policy; it charges one real sandbox premium each time the database is new.
-3. **Backend:**
-   ```
-   cd backend
-   go run ./cmd/fourhour -env-file ../.env
-   ```
-   Check `http://localhost:8080/api/health` lists six loaded artifacts.
-4. **Frontend** (in a second terminal):
-   ```
-   cd frontend
-   npm ci
-   npm run dev
-   ```
-   Open `http://localhost:5173` and follow the judge path.
-5. **Tests:** `cd backend && go test ./...`; `cd frontend && npm test`; for `ml/`, create its virtual environment first as described in `ml/README.md`, then run `python -m pytest` with that environment's Python.
+## License
 
-Deploying to Render: see `DEPLOY.md`.
-
-## Licence
-
-MIT. See `LICENSE`.
+FourHour is licensed under the [MIT License](LICENSE). The datasets retain the licenses listed above.

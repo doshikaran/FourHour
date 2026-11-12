@@ -51,3 +51,14 @@ Thumbs.db
 
 # Claude Code personal settings (the shared .claude/settings.json is committed)
 .claude/settings.local.json
+
+# Internal planning and process docs (kept locally, not published)
+SPEC.md
+CONTRACTS.md
+TASKS.md
+STATUS.md
+AUDIT.md
+CLAUDE.md
+DEPLOY.md
+.claude/agents/
+docs/VIDEO_SCRIPT.md
